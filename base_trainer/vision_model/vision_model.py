@@ -1,22 +1,21 @@
 import os
-import pathlib
 import torch
 from torchvision import models
 from torch import nn
 
 # funciton for downloading and modifying the model
 def vision_model(VocabSize: int,
-                 ModelPath:str):
-    # Setting current working path
-    path = str(pathlib.Path().resolve())
+                 ModelPath: str):
 
     # If model exists load it
     if os.path.exists(ModelPath):
         effnetv2s = torch.load(ModelPath)
         return effnetv2s 
 
+    # Setting up the model download path
+    path = '/model_files/weights/cnn_model/'
     # Setting download path
-    os.environ['TORCH_MODEL_ZOO'] = path + "/models/"
+    os.environ['TORCH_MODEL_ZOO'] = path 
 
     # Downloading the model
     effnetv2s = models.efficientnet_v2_s(pretrained=True)
@@ -29,3 +28,4 @@ def vision_model(VocabSize: int,
 
     effnetv2s.classifier[1] = nn.Linear(in_features=NumFeatures, out_features=VocabSize)
     return effnetv2s
+

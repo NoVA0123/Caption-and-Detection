@@ -10,9 +10,6 @@ logging.basicConfig(level=logging.INFO,
 # List of files
 list_of_files = [
         'src/__init__.py',
-        'src/helper.py',
-        'src/prompt.py'
-        '.env',
         'base_trainer/Transformer/self_attention.py',
         'base_trainer/Transformer/multi_head_attention.py',
         'base_trainer/Transformer/decoder.py',
@@ -23,8 +20,7 @@ list_of_files = [
         'base_trainer/Transformer/positional_encoding',
         'base_trainer/Transformer/transformer.py',
         'base_trainer/Tokenizer/tokenizer.py',
-        'model_files/tokenizer/',
-        'model_files/weights/',
+        'base_trainer/vision_model/vision_model.py'
         'requirements.txt',
         ]
 
