@@ -10,6 +10,7 @@ class Transformer(nn.Module):
     def __init__(self,
                  encoder: Encoder,
                  decoder: Decoder,
+                 SrcEmbeddings: Embeddings,
                  TargetEmbeddings: Embeddings,
                  SrcPos: PositionalEncoding,
                  TargetPos: PositionalEncoding,
@@ -18,6 +19,7 @@ class Transformer(nn.Module):
         super(Transformer, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
+        self.srcEmbed = SrcEmbeddings
         self.tgt_embed = TargetEmbeddings
         self.src_pos = SrcPos
         self.tgt_pos = TargetPos
@@ -25,6 +27,7 @@ class Transformer(nn.Module):
 
 
     def encode(self, source):
+        source = self.srcEmbed(source)
         source = self.src_pos(source)
         return self.encoder(source)
         

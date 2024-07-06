@@ -1,8 +1,8 @@
 import torch
 from torch import nn
 from multi_head_attention import MultiHeadAttention, CrossMultiHeadAttention
-from feedforward import FeedForward
-from layerNormalization import LayerNormalization
+from feed_forward import FeedForward
+from layer_normalization import LayerNormalization
 
 
 class DecoderBlock(nn.Module):
