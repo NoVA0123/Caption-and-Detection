@@ -6,6 +6,7 @@ from base_trainer.Transformer.positional_encoding import PositionalEncoding
 from base_trainer.Transformer.embedding import Embeddings
 from base_trainer.Transformer.transformer import Transformer
 
+
 # Building the model
 def build_transformer(VocabSize: int,
                       MaxSeqLen: int,
