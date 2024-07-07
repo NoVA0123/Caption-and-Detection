@@ -2,10 +2,10 @@ import torch
 from torch import nn
 
 
-class LayerNormalization(nn.Module):
+class layernormalization(nn.Module):
     '''https://arxiv.org/pdf/1706.03762'''
     def __init__(self, epsilon: float = 10**-4):
-        super(LayerNormalization, self).__init__()
+        super(layernormalization, self).__init__()
         self.eps = epsilon # Normalizer denominator is never 0
         self.alpha = nn.Parameter(torch.ones(1)) # Weight
         self.bias = nn.Parameter(torch.zeros(1)) # Bias

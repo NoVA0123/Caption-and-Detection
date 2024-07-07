@@ -1,9 +1,9 @@
 import torch
 from torch import nn
-from base_trainer.Transformer.decoder import Decoder, DecoderBlock
-from base_trainer.Transformer.encoder import Encoder, EncoderBlock
-from base_trainer.Transformer.positional_encoding import PositionalEncoding
-from base_trainer.Transformer.embedding import Embeddings
+from base_trainer.Transformer.decoder import decoder, decoderblock
+from base_trainer.Transformer.encoder import encoder, encoderblock
+from base_trainer.Transformer.positional_encoding import positionalencoding
+from base_trainer.Transformer.embedding import embeddings
 from base_trainer.Transformer.transformer import Transformer
 
 
@@ -17,19 +17,19 @@ def build_transformer(VocabSize: int,
                       Dff: int=2048) -> Transformer:
 
     # Creating Embedding layer
-    SrcEmbed = Embeddings(DModel, VocabSize)
-    TgtEmbed = Embeddings(DModel, VocabSize)
+    SrcEmbed = embeddings(DModel, VocabSize)
+    TgtEmbed = embeddings(DModel, VocabSize)
 
     # Creating Positional Encoding layer
-    SrcPos = PositionalEncoding(DModel,
+    SrcPos = positionalencoding(DModel,
                              MaxSeqLen)
-    TgtPos = PositionalEncoding(DModel,
+    TgtPos = positionalencoding(DModel,
                              MaxSeqLen)
 
     # Creating Encoder Block
     EncoderBlocks = []
     for _ in range(NumBlocks):
-        Block = EncoderBlock(DModel,
+        Block = encoderblock(DModel,
                                     Dff,
                                     Dropout,
                                     NumHeads)
@@ -39,18 +39,18 @@ def build_transformer(VocabSize: int,
     # Creating Decoder Blocks
     DecoderBlocks = []
     for _ in range(NumBlocks):
-        Block = DecoderBlock(DModel,
+        Block = decoderblock(DModel,
                              Dff,
                              Dropout,
                              NumHeads)
 
     # Creating Encoder and Decoder
-    encoder = Encoder(nn.ModuleList(EncoderBlocks))
-    decoder = Decoder(nn.ModuleList(DecoderBlocks))
+    Encoder = encoder(nn.ModuleList(EncoderBlocks))
+    Decoder = decoder(nn.ModuleList(DecoderBlocks))
 
     # Creating Transformer
-    transformer = Transformer(encoder,
-                              decoder,
+    transformer = Transformer(Encoder,
+                              Decoder,
                               SrcEmbed,
                               TgtEmbed,
                               SrcPos,

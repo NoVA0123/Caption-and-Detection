@@ -3,10 +3,10 @@ from torch import nn
 from math import sqrt
 
 
-class SelfAttention(nn.Module):
+class selfattention(nn.Module):
     '''https://arxiv.org/pdf/1706.03762'''
     def __init__(self):
-        super(SelfAttention, self).__init__()
+        super(selfattention, self).__init__()
         '''Q, K, V came from same embedding but different layer'''
 
     def scale(self, Q, K):

@@ -9,7 +9,7 @@ from tqdm.auto import tqdm
 
 
 # Function to create tokenizer
-def TokenizerCreator(Dataset: pd.DataFrame, path: str) -> Tokenizer:
+def tokenizer_creator(Dataset: pd.DataFrame, path: str) -> Tokenizer:
     # If tokenizer already exists, import it.
     if exists(path):
         tokenizer = Tokenizer.from_file(path)
@@ -43,19 +43,19 @@ Creating casual mask so that words which are after the current word will not be
 considered in training because it will help give more weightage to current word
 after multiplying 'query and key' of the current word.
 '''
-def CasualMask(size: int):
+def casual_mask(size: int):
     mask = torch.triu(torch.ones(1, size, size), diagonal=1).type(torch.int)
     return mask == 0
 
 
 # Class object to convert sentences into tokens using tokenizer
-class TextToId:
+class texttoid:
     def __init__(self,
                  tokenizer: Tokenizer,
                  MaxSeqLen: int) -> None:
 
         self.tokenizer = tokenizer
-        self.seq_len = MaxSeqLen # Max length of a sentence in dataset
+        self.seqLen = MaxSeqLen # Max length of a sentence in dataset
 
         # Initialize Start, End and Padding tokens
         self.sosToken = torch.tensor(
@@ -76,10 +76,10 @@ class TextToId:
         # Encodes the sentences
         DecodeInputTok = self.tokenizer.encode(sentence).ids
         # Number of Padded tokens in a sentence
-        DecodeNumPadTok = self.seq_len - len(DecodeInputTok) - 1
+        DecodeNumPadTok = self.seqLen - len(DecodeInputTok) - 1
         
         # Concatenating Start, Decoder sentence and Padded Tokens
-        decoder_input = torch.cat(
+        DecoderInput = torch.cat(
                 [
                     self.sosToken,
                     torch.tensor(DecodeInputTok, dtype=torch.int16),
@@ -89,7 +89,7 @@ class TextToId:
         
         # Label will be next word after current word
         # Concatenating Decoder sentence, End and Padded Tokens to form label
-        label = torch.cat(
+        Label = torch.cat(
                 [
                     torch.tensor(DecodeInputTok, dtype=torch.int16),
                     self.eosToken,
@@ -100,25 +100,25 @@ class TextToId:
         '''
         Creating Masks so that 
         '''
-        decoder_mask = (
-                decoder_input  != self.padToken
+        DecoderMask = (
+                DecoderInput != self.padToken
                 ).unsqueeze(0).unsqueeze(0).unsqueeze(0).int()
-        casual_mask = CasualMask(decoder_input.size(0))
+        CasualMask = casual_mask(DecoderInput.size(0))
 
         return {
-                "decoder_input": decoder_input,
-                "label": label,
-                "decoder_mask": decoder_mask & casual_mask
+                "decoder_input": DecoderInput,
+                "label": Label,
+                "decoder_mask": DecoderMask & CasualMask
                 }
     pass
 
 
 # Function to convert the sentences into tokens
-def Convert(Dataset: pd.DataFrame,
+def convert(Dataset: pd.DataFrame,
             tokenizer: Tokenizer,
             MaxLen: int) -> list:
     # Assign the converter object
-    Converter = TextToId(tokenizer,
+    Converter = texttoid(tokenizer,
                          MaxLen)
     data = [] # A list that will contain tokenized sentences
     # Loop to append tokenized sentences

@@ -1,11 +1,11 @@
 import torch
 from torch import nn
-from multi_head_attention import MultiHeadAttention, CrossMultiHeadAttention
-from feed_forward import FeedForward
-from layer_normalization import LayerNormalization
+from multi_head_attention import multiheadattention, crossmultiheadattention
+from feed_forward import feedforward
+from layer_normalization import layernormalization
 
 
-class DecoderBlock(nn.Module):
+class decoderblock(nn.Module):
     def __init__(self,
                  DModel: int,
                  Dff: int,
@@ -13,80 +13,48 @@ class DecoderBlock(nn.Module):
                  Head: int
                  ):
 
-        super(DecoderBlock, self).__init__()
-        self.multi_head_attention = MultiHeadAttention(Head, 
+        super(decoderblock, self).__init__()
+        self.multiHeadAttention1 = multiheadattention(Head, 
                                                        DModel)
 
-        self.multi_head_attention2 = CrossMultiHeadAttention(Head, 
+        self.multiHeadAttention2 = crossmultiheadattention(Head, 
                                                        DModel)
 
-        self.feed_forward = FeedForward(DModel,
+        self.feedForward = feedforward(DModel,
                                         Dff,
                                         Dropout)
-        self.layer_normalization1 = LayerNormalization()
-        self.layer_normalization2 = LayerNormalization()
-        self.layer_normalization2 = LayerNormalization()
+        self.layerNormalization1 = layernormalization()
+        self.layerNormalization2 = layernormalization()
+        self.layerNormalization3 = layernormalization()
 
     def forward(self,
-                encoder_output,
+                EncoderOutput,
                 y):
 
-        multi_head1 = self.multi_head_attention(y, mask=True)
+        MultiHead1 = self.multiHeadAttention1(y, mask=True)
 
         # Adding tensor -> LayerNormalization
-        AddedTensor = torch.add(y, multi_head1)
-        y = self.layer_normalization1(AddedTensor)
+        AddedTensor = torch.add(y, MultiHead1)
+        y = self.layerNormalization1(AddedTensor)
 
-        multi_head2= self.multi_head_attention2(y, encoder_output)
+        MultiHead2= self.multiHeadAttention2(y, EncoderOutput)
 
-        AddedTensor = torch.add(y, multi_head2)
-        y = self.layer_normalization2(AddedTensor)
+        AddedTensor = torch.add(y, MultiHead2)
+        y = self.layerNormalization2(AddedTensor)
 
-        feed_forward = self.feed_forward(y)
-        AddedTensor = torch.add(y, feed_forward)
-        y = self.layer_normalization2(AddedTensor)
+        FeedForward = self.feedForward(y)
+        AddedTensor = torch.add(y, FeedForward)
+        y = self.layerNormalization3(AddedTensor)
         return y
 
 
-class Decoder(nn.Module):
+class decoder(nn.Module):
     def __init__(self,
                  layers):
-        super(Decoder, self).__init__()
+        super(decoder, self).__init__()
         self.layers = layers
 
     def forward(self, x, y):
         for layer in self.layers:
             y = layer(x, y)
         return y
-        
-
-
-SequenceLength = 4
-BatchSize = 1
-InputDim = 10
-DModel = 10
-Head = 2
-Dff = 40
-Dropout = 0.2
-VocabSize = 10
-NumLayers = 6
-x = torch.randn(BatchSize, SequenceLength, InputDim)
-y = torch.randn(BatchSize, SequenceLength, InputDim)
-
-print("Output before transformer")
-print(x)
-print(y)
-
-layers = []
-for _ in range(6):
-    Decoderblock = DecoderBlock(DModel,
-                                Dff,
-                                Dropout,
-                                Head)
-    layers.append(Decoderblock)
-a = Decoder(layers)
-
-m = a(x, y)
-print("\n\n\n\n")
-print("Output after transformer")
-print(m)

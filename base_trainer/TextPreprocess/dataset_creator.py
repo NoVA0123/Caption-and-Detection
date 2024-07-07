@@ -45,11 +45,11 @@ def create_dataset(TrainAnn: str,
 
 
 # Function for preprocessing text
-def preprocess(text: str) -> str:
-    text = text.lower()
-    text = re.sub(r'[^\w\s]', '', text) # Removes alpha numeric and unicode white spaces like '\t' and '\n'
-    text = '[SOS]' + text + '[EOS]' # Adding start and end for embedding process
-    return text
+def preprocess(Text: str) -> str:
+    Text = Text.lower()
+    Text = re.sub(r'[^\w\s]', '', Text) # Removes alpha numeric and unicode white spaces like '\t' and '\n'
+    Text = '[SOS]' + Text + '[EOS]' # Adding start and end for embedding process
+    return Text
 
 
 # Length finder

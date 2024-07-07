@@ -1,42 +1,42 @@
 import torch
 from torch import nn
-from decoder import Decoder
-from encoder import Encoder
-from positional_encoding import PositionalEncoding
-from embedding import Embeddings
+from decoder import decoder
+from encoder import encoder
+from positional_encoding import positionalencoding
+from embedding import embeddings
 
 
 class Transformer(nn.Module):
     def __init__(self,
-                 encoder: Encoder,
-                 decoder: Decoder,
-                 SrcEmbeddings: Embeddings,
-                 TargetEmbeddings: Embeddings,
-                 SrcPos: PositionalEncoding,
-                 TargetPos: PositionalEncoding,
+                 Encoder: encoder,
+                 Decoder: decoder,
+                 SrcEmbeddings: embeddings,
+                 TargetEmbeddings: embeddings,
+                 SrcPos: positionalencoding,
+                 TargetPos: positionalencoding,
                  DModel: int,
                  VocabSize: int):
         super(Transformer, self).__init__()
-        self.encoder = encoder
-        self.decoder = decoder
+        self.encoder = Encoder
+        self.decoder = Decoder
         self.srcEmbed = SrcEmbeddings
-        self.tgt_embed = TargetEmbeddings
-        self.src_pos = SrcPos
-        self.tgt_pos = TargetPos
-        self.linear_layer = nn.Linear(DModel, VocabSize)
+        self.tgtEmbed = TargetEmbeddings
+        self.srcPos = SrcPos
+        self.tgtPos = TargetPos
+        self.linearLayer = nn.Linear(DModel, VocabSize)
 
 
     def encode(self, source):
         source = self.srcEmbed(source)
-        source = self.src_pos(source)
+        source = self.srcPos(source)
         return self.encoder(source)
         
-    def decoder(self, source, EncoderOutput):
-        source = self.tgt_embed(source)
-        source = self.src_pos(source)
+    def decode(self, source, EncoderOutput):
+        source = self.tgtEmbed(source)
+        source = self.srcPos(source)
         return self.decoder(EncoderOutput, source)
 
     def projection(self, x):
-        x = self.linear_layer(x)
+        x = self.linearLayer(x)
         return torch.softmax(x, dim=-1)
 
