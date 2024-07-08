@@ -6,6 +6,7 @@ from tokenizers.pre_tokenizers import Whitespace
 import pandas as pd
 import torch
 from tqdm.auto import tqdm
+from batch_creator import batch
 
 
 # Function to create tokenizer
@@ -44,7 +45,7 @@ considered in training because it will help give more weightage to current word
 after multiplying 'query and key' of the current word.
 '''
 def casual_mask(size: int):
-    mask = torch.triu(torch.ones(1, size, size), diagonal=1).type(torch.int)
+    mask = torch.triu(torch.ones(1, size, size), diagonal=1).type(torch.int16)
     return mask == 0
 
 
@@ -60,15 +61,15 @@ class texttoid:
         # Initialize Start, End and Padding tokens
         self.sosToken = torch.tensor(
                 [tokenizer.token_to_id('[SOS]')],
-                dtype=torch.int16
+                dtype=torch.uint16
                 )
         self.eosToken = torch.tensor(
                 [tokenizer.token_to_id('[EOS]')],
-                dtype=torch.int16
+                dtype=torch.uint16
                 )
         self.padToken = torch.tensor(
                 [tokenizer.token_to_id('[PAD]')],
-                dtype=torch.int16
+                dtype=torch.uint16
                 )
 
 
@@ -83,7 +84,7 @@ class texttoid:
                 [
                     self.sosToken,
                     torch.tensor(DecodeInputTok, dtype=torch.int16),
-                    torch.tensor(DecodeNumPadTok, dtype=torch.int16),
+                    torch.tensor(DecodeNumPadTok, dtype=torch.uint8),
                     ]
                 )
         
@@ -93,7 +94,7 @@ class texttoid:
                 [
                     torch.tensor(DecodeInputTok, dtype=torch.int16),
                     self.eosToken,
-                    torch.tensor(DecodeNumPadTok, dtype=torch.int16),
+                    torch.tensor(DecodeNumPadTok, dtype=torch.uint8),
                     ]
                 )
         

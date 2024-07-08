@@ -8,7 +8,8 @@ from base_trainer.Transformer.transformer import Transformer
 
 
 # Building the model
-def build_transformer(VocabSize: int,
+def build_transformer(CnnModel,
+                      VocabSize: int,
                       MaxSeqLen: int,
                       DModel: int=512,
                       NumBlocks: int=6,
@@ -49,7 +50,8 @@ def build_transformer(VocabSize: int,
     Decoder = decoder(nn.ModuleList(DecoderBlocks))
 
     # Creating Transformer
-    transformer = Transformer(Encoder,
+    transformer = Transformer(CnnModel,
+                              Encoder,
                               Decoder,
                               SrcEmbed,
                               TgtEmbed,

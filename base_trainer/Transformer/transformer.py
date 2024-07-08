@@ -8,6 +8,7 @@ from embedding import embeddings
 
 class Transformer(nn.Module):
     def __init__(self,
+                 CnnModel,
                  Encoder: encoder,
                  Decoder: decoder,
                  SrcEmbeddings: embeddings,
@@ -17,6 +18,7 @@ class Transformer(nn.Module):
                  DModel: int,
                  VocabSize: int):
         super(Transformer, self).__init__()
+        self.cnnModel = CnnModel
         self.encoder = Encoder
         self.decoder = Decoder
         self.srcEmbed = SrcEmbeddings
@@ -25,6 +27,8 @@ class Transformer(nn.Module):
         self.tgtPos = TargetPos
         self.linearLayer = nn.Linear(DModel, VocabSize)
 
+    def convolution(self, source):
+        return self.cnnModel(source)
 
     def encode(self, source):
         source = self.srcEmbed(source)
