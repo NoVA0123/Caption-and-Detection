@@ -39,16 +39,6 @@ def GetAllSentences(sentenceList:list):
         yield item
 
 
-'''
-Creating casual mask so that words which are after the current word will not be
-considered in training because it will help give more weightage to current word
-after multiplying 'query and key' of the current word.
-'''
-def casual_mask(size: int):
-    mask = torch.triu(torch.ones(1, size, size), diagonal=1).type(torch.int16)
-    return mask == 0
-
-
 # Class object to convert sentences into tokens using tokenizer
 class texttoid:
     def __init__(self,
@@ -98,18 +88,10 @@ class texttoid:
                     ]
                 )
         
-        '''
-        Creating Masks so that 
-        '''
-        DecoderMask = (
-                DecoderInput != self.padToken
-                ).unsqueeze(0).unsqueeze(0).unsqueeze(0).int()
-        CasualMask = casual_mask(DecoderInput.size(0))
 
         return {
                 "decoder_input": DecoderInput,
-                "label": Label,
-                "decoder_mask": DecoderMask & CasualMask
+                "label": Label
                 }
     pass
 
