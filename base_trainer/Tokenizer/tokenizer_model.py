@@ -72,7 +72,7 @@ class texttoid:
         DecoderInput = torch.cat(
                 [
                     self.sosToken,
-                    torch.tensor(DecodeInputTok, dtype=torch.int16),
+                    torch.tensor(DecodeInputTok, dtype=torch.int),
                     torch.tensor(DecodeNumPadTok, dtype=torch.uint8),
                     ]
                 )
@@ -81,7 +81,7 @@ class texttoid:
         # Concatenating Decoder sentence, End and Padded Tokens to form label
         Label = torch.cat(
                 [
-                    torch.tensor(DecodeInputTok, dtype=torch.int16),
+                    torch.tensor(DecodeInputTok, dtype=torch.int),
                     self.eosToken,
                     torch.tensor(DecodeNumPadTok, dtype=torch.uint8),
                     ]
@@ -104,6 +104,6 @@ def convert(Dataset: pd.DataFrame,
                          MaxLen)
     data = [] # A list that will contain tokenized sentences
     # Loop to append tokenized sentences
-    for x in tqdm(Dataset['caption'].tolist()):
+    for x in tqdm(Dataset['caption'].tolist(), ascii=True, desc='Converting captions'):
         data.append(Converter.converter(x))
     return data

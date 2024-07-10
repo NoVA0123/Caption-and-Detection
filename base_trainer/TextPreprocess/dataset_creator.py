@@ -1,6 +1,7 @@
 import re
 import json
 import pandas as pd
+from tqdm.auto import tqdm
 
 
 # Function to extract Image Path and caption path
@@ -15,7 +16,9 @@ def extracter(JsonPath: str,
     ImgCap = []
     
     # Traversing the json
-    for sample in data:
+    for sample in tqdm(data,
+                       ascii=True,
+                       desc='Loading the data'):
         '''Image file name is stored as 12 digits + .jpg and in annoations the
            image is stored as id and it is not of 12 digits. So, we need to
            to 12 digit string
@@ -57,7 +60,7 @@ def length_finder(TrainData: pd.DataFrame,
                   ValData: pd.DataFrame) -> int:
     MaxLen = 0
 
-    for i in TrainData['caption'].tolist():
+    for i in tqdm(TrainData['caption'].tolist(), ascii=True, desc="Finding maximum length"):
         m = i.split()
         if len(m) > MaxLen:
             MaxLen = len(i)

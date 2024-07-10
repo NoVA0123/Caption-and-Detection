@@ -18,6 +18,7 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 from argparse import ArgumentParser
+import warnings
 
 
 # Get vision model
@@ -50,10 +51,12 @@ def train(TrainPath: str,
           SpecifiedPath=None):
 
     # Creating the dataset
+    print('Creating Data set :-')
     TrainData, ValData = create_dataset(TrainPath,
                                         ValPath,
                                         TrainImgPath,
                                         ValImgPath)
+    print('Dataset have been created. \n \n')
 
     # Preprocessing the text
     TrainData['caption'] = TrainData['caption'].apply(preprocess)
@@ -61,19 +64,26 @@ def train(TrainPath: str,
 
 
     # Finding the maximum length of the sentence
+    print('Finding the maximum length :-')
     MaxLen = length_finder(TrainData, ValData)
+
+    print('Maximum length has been found! \n \n')
 
 
     # Getting the tokenizer
+    print('Tokenizer is being created :-')
     tokenizer = tokenizer_creator(TrainData,
                                   TokenizerPath)
+    print('Tokenizer has been created. \n \n')
 
     # Initializing vocab size
     VocabSize = tokenizer.get_vocab_size()
 
 
     # Cnn transfer learning model
+    print("Loading the Cnn model :-")
     effnetv2s = vision_model(VocabSize, CnnModelPath, SpecifiedPath)
+    print("Cnn model has been loaded!")
 
     '''
     Image Augmentation coming soon
@@ -88,6 +98,7 @@ def train(TrainPath: str,
 
     # Converting captions into tokens
     # On training  data
+    print('Converting into captions :-')
     TrainCaption = convert(TrainData,
                            tokenizer,
                            MaxLen)
@@ -96,6 +107,7 @@ def train(TrainPath: str,
     ValCaption = convert(ValData,
                          tokenizer,
                          MaxLen)
+    print('Dataset has been converted into captions. \n \n')
 
 
     # Loading the data
@@ -207,6 +219,7 @@ def get_command_line_arguments():
 
 
 if __name__ == '__main__':
+    warnings.filterwarnings('ignore')
     args = get_command_line_arguments()
     args = args.Paths
     train(*args)
