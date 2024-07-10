@@ -28,7 +28,7 @@ def extracter(JsonPath: str,
         ImgCap.append([ImgName, sample['caption']])
 
     # Creating a Data Frame for preprocessing the text
-    captions = pd.DataFrame(ImgCap, columns=['imgae_path', 'caption'])
+    captions = pd.DataFrame(ImgCap, columns=['image_path', 'caption'])
     return captions
 
 
