@@ -4,9 +4,10 @@ from torchvision import models
 from torch import nn
 
 # funciton for downloading and modifying the model
-def vision_model(DModel: int=512,
+def vision_model(MaxLen,
                  ModelPath=None,
-                 SpecifiedPath=None):
+                 SpecifiedPath=None,
+                 DModel: int=512):
 
     # If model exists load it
     if ModelPath is not None and os.path.exists(ModelPath):
@@ -26,6 +27,6 @@ def vision_model(DModel: int=512,
     for params in effnetv2s.parameters():
         params.requires_grad = False
 
-    effnetv2s.classifier[1] = nn.Linear(in_features=NumFeatures, out_features=DModel)
+    effnetv2s.classifier[1] = nn.Linear(in_features=NumFeatures, out_features=MaxLen * DModel)
     return effnetv2s
 

@@ -85,7 +85,7 @@ def train(TrainPath: str,
 
     # Cnn transfer learning model
     print("Loading the Cnn model :-")
-    effnetv2s = vision_model(VocabSize, CnnModelPath, SpecifiedPath)
+    effnetv2s = vision_model(MaxLen, CnnModelPath, SpecifiedPath)
     print("Cnn model has been loaded!")
 
     '''
