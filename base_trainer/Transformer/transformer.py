@@ -27,10 +27,8 @@ class Transformer(nn.Module):
         self.tgtPos = TargetPos
         self.linearLayer = nn.Linear(DModel, VocabSize)
 
-    def convolution(self, source):
-        return self.cnnModel(source)
-
     def encode(self, source):
+        source = self.cnnModel(source)
         source = self.srcEmbed(source)
         source = self.srcPos(source)
         return self.encoder(source)
