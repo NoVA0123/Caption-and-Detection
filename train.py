@@ -169,8 +169,11 @@ def train(TrainPath: str,
             DecoderInput = batch['decoder_input'].to(device)
 
             # Run the tensors throught the transformers
-            EncoderOutput = model.encode(Img)
-            DecoderOutput = model.decode(DecoderInput, EncoderOutput)
+            EncoderOutput = model.encode(Img,
+                                         MaxLen,
+                                         config['batch_size'])
+            DecoderOutput = model.decode(DecoderInput,
+                                         EncoderOutput)
             ProjOutput = model.projection(DecoderOutput)
 
             label = batch['label'].to(device)

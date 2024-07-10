@@ -23,9 +23,13 @@ class Transformer(nn.Module):
         self.pos = Pos
         self.linearLayer = nn.Linear(DModel, VocabSize)
 
-    def encode(self, source):
+    def encode(self,
+               source,
+               MaxLen,
+               BatchSize: int=8,
+               DModel: int=512):
         source = self.cnnModel(source)
-        source = source.type(torch.int)
+        source = torch.reshape(source, (BatchSize, MaxLen, DModel))
         return self.encoder(source)
         
     def decode(self, source, EncoderOutput):
