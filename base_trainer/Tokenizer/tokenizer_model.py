@@ -104,6 +104,8 @@ def convert(Dataset: pd.DataFrame,
                          MaxLen)
     data = [] # A list that will contain tokenized sentences
     # Loop to append tokenized sentences
-    for x in tqdm(Dataset['caption'].tolist(), ascii=True, desc='Converting captions'):
+    for x in tqdm(Dataset['caption'].tolist(),
+                  ascii=True,
+                  desc='Converting captions'):
         data.append(Converter.converter(x))
     return data
