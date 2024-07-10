@@ -6,7 +6,6 @@ from tokenizers.pre_tokenizers import Whitespace
 import pandas as pd
 import torch
 from tqdm.auto import tqdm
-from batch_creator import batch
 
 
 # Function to create tokenizer
