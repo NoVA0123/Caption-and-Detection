@@ -65,6 +65,7 @@ class texttoid:
     def converter(self, sentence:str) -> dict:
         # Encodes the sentences
         DecodeInputTok = self.tokenizer.encode(sentence).ids
+        print(DecodeInputTok)
         # Number of Padded tokens in a sentence
         DecodeNumPadTok = self.seqLen - len(DecodeInputTok) - 1
         
