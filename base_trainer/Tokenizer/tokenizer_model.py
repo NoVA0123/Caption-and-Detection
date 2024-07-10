@@ -72,7 +72,7 @@ class texttoid:
         DecoderInput = torch.cat(
                 [
                     self.sosToken,
-                    torch.tensor(DecodeInputTok, dtype=torch.int16),
+                    torch.tensor(DecodeInputTok, dtype=torch.short),
                     torch.tensor(DecodeNumPadTok, dtype=torch.uint8),
                     ]
                 )
@@ -81,7 +81,7 @@ class texttoid:
         # Concatenating Decoder sentence, End and Padded Tokens to form label
         Label = torch.cat(
                 [
-                    torch.tensor(DecodeInputTok, dtype=torch.int16),
+                    torch.tensor(DecodeInputTok, dtype=torch.short),
                     self.eosToken,
                     torch.tensor(DecodeNumPadTok, dtype=torch.uint8),
                     ]
