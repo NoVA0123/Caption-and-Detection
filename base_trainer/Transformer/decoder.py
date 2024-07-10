@@ -1,8 +1,8 @@
 import torch
 from torch import nn
-from multi_head_attention import multiheadattention, crossmultiheadattention
-from feed_forward import feedforward
-from layer_normalization import layernormalization
+from base_trainer.Transformer.multi_head_attention import multiheadattention, crossmultiheadattention
+from base_trainer.Transformer.feed_forward import feedforward
+from base_trainer.Transformer.layer_normalization import layernormalization
 
 
 class decoderblock(nn.Module):

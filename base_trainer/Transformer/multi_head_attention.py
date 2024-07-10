@@ -1,5 +1,5 @@
 import torch
-from self_attention import selfattention
+from base_trainer.Transformer.self_attention import selfattention
 from torch import nn
 
 class multiheadattention(nn.Module):
