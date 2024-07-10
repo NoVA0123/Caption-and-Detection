@@ -49,7 +49,7 @@ def translate(ImgPath: str,
         Img = Img.unsqueeze(0)
 
         # Encoding the image
-        EncoderOutput = model.encode(Img, MaxLen, 1)
+        EncoderOutput = model.encode(Img, MaxLen, 1).to(device)
 
         # Blueprint for Decoder Input
         TmpId = 34
