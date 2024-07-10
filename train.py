@@ -183,7 +183,6 @@ def train(TrainPath: str,
 
             # calculating loss
             loss = LossFn(ProjOutput.view(-1, VocabSize), label.view(-1))
-            DecodeBatch.set_postfix({f'loss': '{loss.item(): 6.3f}'})
 
             # Log the loss in tensorboard
             writer.add_scalar('train loss', loss.item(), GlobalStep)
@@ -199,6 +198,7 @@ def train(TrainPath: str,
 
             GlobalStep += 1
 
+        DecodeBatch.set_postfix({f'loss': f'{loss.item(): 6.3f}'})
 
         # Save the model at the end of every epoch
         ModelFilename = get_weights_file_path(config, f'{epoch:02d}')
