@@ -160,7 +160,7 @@ def train(TrainPath: str,
     for epoch in range(InitialEpoch, config['num_epochs']):
 
         model.train()
-        DecodeBatch = tqdm(TrainCaption)
+        DecodeBatch = TrainCaption
         TrainImgBatch = TrainImg
 
         for img, batch in tqdm(zip(TrainImgBatch, DecodeBatch),
@@ -198,7 +198,7 @@ def train(TrainPath: str,
 
             GlobalStep += 1
 
-        DecodeBatch.set_postfix({f'loss': f'{loss.item(): 6.3f}'})
+        print({f'loss': f'{loss.item(): 6.3f}'})
 
         # Save the model at the end of every epoch
         ModelFilename = get_weights_file_path(config, f'{epoch:02d}')
