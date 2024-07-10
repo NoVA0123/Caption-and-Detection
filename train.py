@@ -32,7 +32,7 @@ class loadimg(torch.utils.data.Dataset):
             ])
 
     def __len__(self):
-        return len(self.dataframe)
+        return len(self.dataFrame)
 
     def __getitem__(self, Index):
         # 'image_path' column has path to images
