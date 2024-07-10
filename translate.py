@@ -46,6 +46,7 @@ def translate(ImgPath: str,
 
         Img = read_image(ImgPath)
         Img = transform(Img)
+        Img = Img.unsqueeze(0)
 
         # Encoding the image
         EncoderOutput = model.encode(Img, MaxLen, 1)
