@@ -50,15 +50,15 @@ class texttoid:
         # Initialize Start, End and Padding tokens
         self.sosToken = torch.tensor(
                 [tokenizer.token_to_id('[SOS]')],
-                dtype=torch.uint8
+                dtype=torch.int
                 )
         self.eosToken = torch.tensor(
                 [tokenizer.token_to_id('[EOS]')],
-                dtype=torch.uint8
+                dtype=torch.int
                 )
         self.padToken = torch.tensor(
                 [tokenizer.token_to_id('[PAD]')],
-                dtype=torch.uint8
+                dtype=torch.int
                 )
 
 
@@ -72,8 +72,8 @@ class texttoid:
         DecoderInput = torch.cat(
                 [
                     self.sosToken,
-                    torch.tensor(DecodeInputTok, dtype=torch.short),
-                    torch.tensor([self.padToken] * DecodeNumPadTok, dtype=torch.uint8),
+                    torch.tensor(DecodeInputTok, dtype=torch.int),
+                    torch.tensor([self.padToken] * DecodeNumPadTok, dtype=torch.int),
                     ]
                 )
         
@@ -81,9 +81,9 @@ class texttoid:
         # Concatenating Decoder sentence, End and Padded Tokens to form label
         Label = torch.cat(
                 [
-                    torch.tensor(DecodeInputTok, dtype=torch.short),
+                    torch.tensor(DecodeInputTok, dtype=torch.int),
                     self.eosToken,
-                    torch.tensor([self.padToken] * DecodeNumPadTok, dtype=torch.uint8),
+                    torch.tensor([self.padToken] * DecodeNumPadTok, dtype=torch.int),
                     ]
                 )
         
