@@ -50,15 +50,15 @@ class texttoid:
         # Initialize Start, End and Padding tokens
         self.sosToken = torch.tensor(
                 [tokenizer.token_to_id('[SOS]')],
-                dtype=torch.uint16
+                dtype=torch.int16
                 )
         self.eosToken = torch.tensor(
                 [tokenizer.token_to_id('[EOS]')],
-                dtype=torch.uint16
+                dtype=torch.int16
                 )
         self.padToken = torch.tensor(
                 [tokenizer.token_to_id('[PAD]')],
-                dtype=torch.uint16
+                dtype=torch.int16
                 )
 
 
