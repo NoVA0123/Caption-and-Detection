@@ -75,7 +75,7 @@ class texttoid:
                 [
                     self.sosToken,
                     torch.tensor(DecodeInputTok, dtype=torch.short),
-                    torch.tensor(DecodeNumPadTok, dtype=torch.uint8),
+                    torch.tensor([self.padToken] * DecodeNumPadTok, dtype=torch.uint8),
                     ]
                 )
         
@@ -85,7 +85,7 @@ class texttoid:
                 [
                     torch.tensor(DecodeInputTok, dtype=torch.short),
                     self.eosToken,
-                    torch.tensor(DecodeNumPadTok, dtype=torch.uint8),
+                    torch.tensor([self.padToken] * DecodeNumPadTok, dtype=torch.uint8),
                     ]
                 )
         
