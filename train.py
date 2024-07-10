@@ -154,7 +154,6 @@ def train(TrainPath: str,
 
     # There are multiple words therefore, I will use Cross Entropy
     LossFn = nn.CrossEntropyLoss(ignore_index=tokenizer.token_to_id('[PAD]'), label_smoothing=0.1).to(device)
-
     
     # Training begins from here
     for epoch in range(InitialEpoch, config['num_epochs']):
