@@ -28,7 +28,7 @@ class loadimg(torch.utils.data.Dataset):
             v2.ToDtype(torch.float16, scale=True), # turns images into float16
             v2.Resize(size=[224, 224]), # Resizes the image
             v2.Normalize(mean=[0, 0, 0], std=[1, 1, 1]), # Normalize values
-            v2.ToDtype(torch.half)
+            v2.ToDtype(torch.long)
             ])
 
     def __len__(self):
