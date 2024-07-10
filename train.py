@@ -25,10 +25,10 @@ class loadimg(torch.utils.data.Dataset):
     def __init__(self, DataFrame):
         self.dataFrame = DataFrame
         self.transform = v2.Compose([
-            v2.ToDtype(torch.double, scale=True), # turns images into float16
+            v2.ToDtype(torch.float, scale=True), # turns images into float16
             v2.Resize(size=[224, 224]), # Resizes the image
             v2.Normalize(mean=[0, 0, 0], std=[1, 1, 1]), # Normalize values
-            v2.ToDtype(torch.double)
+            v2.ToDtype(torch.float)
             ])
 
     def __len__(self):
