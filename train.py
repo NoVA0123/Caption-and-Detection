@@ -3,7 +3,6 @@ from torch import nn
 import pandas as pd
 import tokenizers
 from base_trainer.Tokenizer.tokenizer_model import tokenizer_creator, convert
-from config import get_config, get_weights_file_path
 from base_trainer.TextPreprocess.dataset_creator import *
 from config import get_config, get_weights_file_path
 from base_trainer.vision_model.vision_model import vision_model
@@ -48,7 +47,8 @@ def train(TrainPath: str,
           ValImgPath: str,
           TokenizerPath: str,
           CnnModelPath=None,
-          SpecifiedPath=None):
+          SpecifiedPath=None,
+          Epochs: int=5):
 
     # Creating the dataset
     print('Creating Data set :-')
@@ -89,7 +89,7 @@ def train(TrainPath: str,
     Image Augmentation coming soon
     '''
     # Getting the config file
-    config = get_config(MaxLen)
+    config = get_config(MaxLen, Epochs)
 
 
     # Taking 70,000 samples due to memory constraints
@@ -158,7 +158,7 @@ def train(TrainPath: str,
 
     
     # Training begins from here
-    for epoch in range(InitialEpoch, config['num_epoch']):
+    for epoch in range(InitialEpoch, config['num_epochs']):
 
         model.train()
         DecodeBatch = tqdm(TrainCaption)

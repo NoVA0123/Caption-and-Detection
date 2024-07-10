@@ -1,9 +1,10 @@
 from pathlib import Path
 
-def get_config(MaxSeqLen: int):
+def get_config(MaxSeqLen: int,
+               Epoch: int=5):
     return {
             'batch_size': 8,
-            'num_epochs': 5,
+            'num_epochs': Epoch,
             'lr': 10**-4,
             'seq_len': MaxSeqLen,
             'd_model': 512,
