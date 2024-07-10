@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class positionalencoding(nn.Module):
     '''https://arxiv.org/pdf/1706.03762'''
@@ -20,6 +21,6 @@ class positionalencoding(nn.Module):
         OddPe = torch.sin(Positions/Denom)
 
         stacking = torch.stack([EvenPe, OddPe], dim=2)
-        Pe = torch.flatten(stacking, start_dim=1, end_dim=2)
+        Pe = torch.flatten(stacking, start_dim=1, end_dim=2).to(device)
         x = x + Pe.requires_grad_(False)
         return x  
