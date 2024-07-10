@@ -29,6 +29,7 @@ class Transformer(nn.Module):
 
     def encode(self, source):
         source = self.cnnModel(source)
+        source = source.type(torch.int)
         source = self.srcEmbed(source)
         source = self.srcPos(source)
         return self.encoder(source)
