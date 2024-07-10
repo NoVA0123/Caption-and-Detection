@@ -160,7 +160,7 @@ def train(TrainPath: str,
     for epoch in range(InitialEpoch, config['num_epochs']):
 
         model.train()
-        DecodeBatch = TrainCaption
+        DecodeBatch = tqdm(TrainCaption)
         TrainImgBatch = TrainImg
 
         for img, batch in tqdm(zip(TrainImgBatch, DecodeBatch),
