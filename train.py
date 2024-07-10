@@ -58,6 +58,9 @@ def train(TrainPath: str,
                                         ValImgPath)
     print('Dataset have been created. \n \n')
 
+    # Taking 70,000 samples due to memory constraints
+    TrainData = TrainData.sample(70_000, random_state=42).reset_index(drop=True)
+
     # Preprocessing the text
     TrainData['caption'] = TrainData['caption'].apply(preprocess)
     ValData['caption'] = ValData['caption'].apply(preprocess)
@@ -90,10 +93,6 @@ def train(TrainPath: str,
     '''
     # Getting the config file
     config = get_config(MaxLen, Epochs)
-
-
-    # Taking 70,000 samples due to memory constraints
-    TrainData = TrainData.sample(70_000, random_state=42).reset_index(drop=True)
 
 
     # Converting captions into tokens

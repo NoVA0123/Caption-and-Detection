@@ -18,12 +18,9 @@ def build_transformer(CnnModel,
                       Dff: int=2048) -> Transformer:
 
     # Creating Embedding layer
-    SrcEmbed = embeddings(DModel, VocabSize)
     TgtEmbed = embeddings(DModel, VocabSize)
 
     # Creating Positional Encoding layer
-    SrcPos = positionalencoding(DModel,
-                             MaxSeqLen)
     TgtPos = positionalencoding(DModel,
                              MaxSeqLen)
 
@@ -31,9 +28,9 @@ def build_transformer(CnnModel,
     EncoderBlocks = []
     for _ in range(NumBlocks):
         Block = encoderblock(DModel,
-                                    Dff,
-                                    Dropout,
-                                    NumHeads)
+                             Dff,
+                             Dropout,
+                             NumHeads)
 
         EncoderBlocks.append(Block)
 
@@ -53,9 +50,7 @@ def build_transformer(CnnModel,
     transformer = Transformer(CnnModel,
                               Encoder,
                               Decoder,
-                              SrcEmbed,
                               TgtEmbed,
-                              SrcPos,
                               TgtPos,
                               DModel,
                               VocabSize)

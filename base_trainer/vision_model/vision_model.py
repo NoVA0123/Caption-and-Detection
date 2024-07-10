@@ -4,7 +4,7 @@ from torchvision import models
 from torch import nn
 
 # funciton for downloading and modifying the model
-def vision_model(VocabSize: int,
+def vision_model(DModel: int=512,
                  ModelPath=None,
                  SpecifiedPath=None):
 
@@ -26,6 +26,6 @@ def vision_model(VocabSize: int,
     for params in effnetv2s.parameters():
         params.requires_grad = False
 
-    effnetv2s.classifier[1] = nn.Linear(in_features=NumFeatures, out_features=VocabSize)
+    effnetv2s.classifier[1] = nn.Linear(in_features=NumFeatures, out_features=DModel)
     return effnetv2s
 
