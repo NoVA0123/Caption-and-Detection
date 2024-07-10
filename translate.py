@@ -10,6 +10,8 @@ import warnings
 
 
 def translate(ImgPath: str,
+              TokenizerPath: str,
+              ModelPath:str,
               CnnModelPath=None,
               SpecifiedPath=None):
 
@@ -21,11 +23,11 @@ def translate(ImgPath: str,
     MaxLen = 75
     effnetv2s = vision_model(MaxLen, CnnModelPath, SpecifiedPath)
     config = get_config(MaxLen)
-    tokenizer = Tokenizer.from_file("D:/downloads/tokeizer.json")
+    tokenizer = Tokenizer.from_file(TokenizerPath)
     model = build_transformer(effnetv2s, tokenizer.get_vocab_size(), MaxLen)
 
     # Loading the model
-    ModelFilename = "D:/downloads/caption_model04.pt"
+    ModelFilename = ModelPath
     state = torch.load(ModelFilename)
     model.load_state_dict(state['model_state_dict'])
 
