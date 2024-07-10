@@ -28,8 +28,8 @@ class decoderblock(nn.Module):
         self.layerNormalization3 = layernormalization()
 
     def forward(self,
-                EncoderOutput,
-                y):
+                y,
+                EncoderOutput):
 
         MultiHead1 = self.multiHeadAttention1(y, mask=True)
 

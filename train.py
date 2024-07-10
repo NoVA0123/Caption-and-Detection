@@ -17,6 +17,7 @@ from base_trainer.vision_model.vision_model import vision_model
 from torch.utils.tensorboard.writer import SummaryWriter
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
+from argparse import ArgumentParser
 
 
 # Get vision model
@@ -155,7 +156,6 @@ def train(TrainPath: str,
 
             Img = img.to(device)
             DecoderInput = batch['decoder_input'].to(device)
-            DecoderMask = batch['decoder_mask'].to(device)
 
             # Run the tensors throught the transformers
             EncoderOutput = model.encode(Img)
@@ -186,3 +186,27 @@ def train(TrainPath: str,
 
         # Save the model at the end of every epoch
         ModelFilename = get_weights_file_path(config, f'{epoch:02d}')
+        torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': Optimizer.state_dict(),
+            'global_step': GlobalStep
+            }, ModelFilename)
+
+
+
+def get_command_line_arguments():
+    parser = ArgumentParser()
+    # Specifies required paths
+    parser.add_argument("--paths",
+                        dest='Paths',
+                        required=True,
+                        action='append',
+                        help='Specify the paths')
+    return parser.parse_args()
+
+
+if __name__ == '__main__':
+    args = get_command_line_arguments()
+    args = args.Paths
+    train(*args)
