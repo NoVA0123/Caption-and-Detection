@@ -78,7 +78,7 @@ def translate(ImgPath: str,
                         torch.tensor([[NextWord.item()]]).to(device)
                         ],
                     dim=1
-                    )
+                    ).to(device)
 
             # Translate the sentence
             print(f"{tokenizer.decode([NextWord.item()])}", end=' ')
