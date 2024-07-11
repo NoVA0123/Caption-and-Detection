@@ -27,11 +27,10 @@ def translate(ImgPath: str,
 
     # Loading the model
     ModelFilename = ModelPath
-    if device == 'cpu':
-        state = torch.load(ModelFilename,
-                           map_location=torch.device('cpu'))
-    else:
+    if torch.cuda.is_available():
         state = torch.load(ModelFilename)
+    else:
+        state = torch.load(ModelFilename, map_location=torch.device('cpu'))
     model.load_state_dict(state['model_state_dict'])
 
 
