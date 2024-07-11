@@ -34,7 +34,8 @@ class Transformer(nn.Module):
         return self.encoder(source)
         
     def decode(self, source, EncoderOutput):
-        source = self.embed(source.to(device))
+        source = source.to(device)
+        source = self.embed(source)
         source = self.pos(source)
         return self.decoder(EncoderOutput, source)
 
