@@ -138,7 +138,7 @@ def train(TrainPath: str,
     # Optimzer
     Optimizer = torch.optim.Adam(model.parameters(),
                                  lr=config['lr'],
-                                 eps=1e-9)
+                                 eps=1e-2)
 
 
     # Initializing training method
@@ -157,7 +157,7 @@ def train(TrainPath: str,
     
     # Training begins from here
     for epoch in range(InitialEpoch, config['num_epochs']):
-
+        torch.cuda.empty_cache()
         model.train()
         DecodeBatch = TrainCaption
         TrainImgBatch = TrainImg
@@ -193,7 +193,7 @@ def train(TrainPath: str,
 
             # Update the weights
             Optimizer.step()
-            Optimizer.zero_grad()
+            Optimizer.zero_grad(set_to_none=True)
 
             GlobalStep += 1
 
