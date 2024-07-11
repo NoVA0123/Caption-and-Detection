@@ -57,7 +57,7 @@ def translate(ImgPath: str,
         # Generating Caption
         while DecoderInput.size(1) < MaxLen:
             print('Doing the value')
-            Output = model.decode(DecoderInput, EncoderOutput)
+            Output = model.decode(DecoderInput, EncoderOutput).to(device)
             print('Value is stored')
 
             # Project next toekn
