@@ -63,7 +63,7 @@ def translate(ImgPath: str,
             print('Value is stored')
 
             # Project next toekn
-            prob = model.project(Output[:, -1])
+            prob = model.projection(Output[:, -1])
             _, NextWord = torch.max(prob, dim=1)
             DecoderInput = torch.cat([DecoderInput,
                                       torch.empty(1, 1).fill_(NextWord.item()).to(device)],
