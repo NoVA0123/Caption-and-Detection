@@ -69,7 +69,7 @@ def translate(ImgPath: str,
             prob = model.projection(Output[:, -1])
             _, NextWord = torch.max(prob, dim=1)
             DecoderInput = torch.cat([DecoderInput,
-                                      torch.empty(1, NewLen).fill_(NextWord.item()).to(device)],
+                                      torch.empty(1, 1).fill_(NextWord.item()).to(device)],
                                      dim=1)
             DecoderInput = DecoderInput.to(device=device,
                                            dtype=torch.long)
