@@ -52,8 +52,7 @@ def translate(ImgPath: str,
         EncoderOutput = model.encode(Img, MaxLen, 1).to(device)
 
         # Initializing the decoder
-        DecoderInput = torch.empty(1,1).fill_(tokenizer.token_to_id('[SOS]')).to(device)
-
+        DecoderInput = torch.empty(1,1).fill_(tokenizer.token_to_id('[SOS]')).to(device, dtype=torch.long)
 
         # Generating Caption
         while DecoderInput.size(1) < MaxLen:
