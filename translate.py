@@ -29,7 +29,7 @@ def translate(ImgPath: str,
     ModelFilename = ModelPath
     if device == 'cpu':
         state = torch.load(ModelFilename,
-                           map_location='cpu')
+                           map_location=torch.device('cpu'))
     else:
         state = torch.load(ModelFilename)
     model.load_state_dict(state['model_state_dict'])
