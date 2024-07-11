@@ -51,20 +51,8 @@ def translate(ImgPath: str,
         # Encoding the image
         EncoderOutput = model.encode(Img, MaxLen, 1).to(device)
 
-        # Blueprint for Decoder Input
-        TmpId = 34
-        tmp = torch.cat([
-            torch.tensor([tokenizer.token_to_id('[SOS]')], dtype=torch.long),
-            torch.zeros(TmpId, dtype=torch.long),
-            torch.tensor([tokenizer.token_to_id('[EOS]')], dtype=torch.long),
-            torch.tensor([tokenizer.token_to_id('[PAD]')] * (MaxLen - TmpId - 2),
-                         dtype=torch.long),
-            ], dim=0)
         # Initializing the decoder
-        DecoderInput = torch.empty(1,
-                                   1).fill_(
-                                           tokenizer.token_to_id('[SOS]')
-                                           ).type_as(tmp).to(device)
+        DecoderInput = torch.empty(1,1).fill_(tokenizer.token_to_id('[SOS]')).to(device)
 
 
         # Generating Caption
@@ -75,8 +63,8 @@ def translate(ImgPath: str,
             prob = model.project(Output[:, -1])
             _, NextWord = torch.max(prob, dim=1)
             DecoderInput = torch.cat([DecoderInput,
-                                       torch.empty(1, 1).type_as(tmp).fill_(NextWord.item()).to(device)],
-                                      dim=1)
+                                      torch.empty(1, 1).fill_(NextWord.item()).to(device)],
+                                     dim=1).to(device)
 
             # Translate the sentence
             print(f"{tokenizer.decode([NextWord.item()])}", end=' ')
