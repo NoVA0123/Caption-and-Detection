@@ -20,21 +20,26 @@ def translate(ImgPath: str,
     print('Using device:', device)
 
     # Initializing model
+    print('\n\nInitializing the model :-')
     MaxLen = 75
     effnetv2s = vision_model(MaxLen, CnnModelPath, SpecifiedPath)
     tokenizer = Tokenizer.from_file(TokenizerPath)
     model = build_transformer(effnetv2s, tokenizer.get_vocab_size(), MaxLen)
+    print('\nModel has been initialized.')
 
     # Loading the model
+    print('\n\n Loading the Model :-')
     ModelFilename = ModelPath
     if torch.cuda.is_available():
         state = torch.load(ModelFilename)
     else:
         state = torch.load(ModelFilename, map_location=torch.device('cpu'))
     model.load_state_dict(state['model_state_dict'])
+    print("\nModel has been loaded.")
 
 
     # translate
+    print('\n\nTranslating...')
     model.eval()
     with torch.no_grad():
 
@@ -46,6 +51,7 @@ def translate(ImgPath: str,
             v2.ToDtype(torch.float)
             ])
 
+        print('\n Reading the Image')
         Img = read_image(ImgPath)
         Img = transform(Img)
         Img = Img.unsqueeze(0)
@@ -54,24 +60,25 @@ def translate(ImgPath: str,
         EncoderOutput = model.encode(Img, MaxLen, 1).to(device)
 
         # Initializing the decoder
-        DecoderInput = torch.empty(1,1).fill_(tokenizer.token_to_id('[SOS]'))
-        DecoderInput = DecoderInput.to(dtype=torch.long)
+        DecoderInput = torch.tensor([[tokenizer.token_to_id('[SOS]')]],
+                                    dtype=torch.long).to(device)
 
         # Generating Caption
+        print('\n Generating captions')
         NewLen = MaxLen - 1
         while DecoderInput.size(1) < MaxLen:
-            print('Doing the value')
-            Output = model.decode(DecoderInput.to(device), EncoderOutput).to(device)
-            print('Value is stored')
+            Output = model.decode(DecoderInput, EncoderOutput).to(device)
 
             # Project next toekn
             prob = model.projection(Output[:, -1])
             _, NextWord = torch.max(prob, dim=1)
-            DecoderInput = torch.cat([DecoderInput,
-                                      torch.empty(1, 1).fill_(NextWord.item()).to(device)],
-                                     dim=1)
-            DecoderInput = DecoderInput.to(device=device,
-                                           dtype=torch.long)
+            DecoderInput = torch.cat(
+                    [
+                        DecoderInput,
+                        torch.tensor([[NextWord.item()]]).to(device)
+                        ],
+                    dim=1
+                    )
 
             # Translate the sentence
             print(f"{tokenizer.decode([NextWord.item()])}", end=' ')
@@ -103,4 +110,4 @@ if __name__ == '__main__':
     warnings.filterwarnings('ignore')
     args = get_command_line_arguments()
     args = args.Paths
-    translate(*args)
+    print(translate(*args))
