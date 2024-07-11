@@ -59,6 +59,7 @@ def translate(ImgPath: str,
                                        dtype=torch.long)
 
         # Generating Caption
+        NewLen = MaxLen - 1
         while DecoderInput.size(1) < MaxLen:
             print('Doing the value')
             Output = model.decode(DecoderInput, EncoderOutput).to(device)
@@ -68,7 +69,7 @@ def translate(ImgPath: str,
             prob = model.projection(Output[:, -1])
             _, NextWord = torch.max(prob, dim=1)
             DecoderInput = torch.cat([DecoderInput,
-                                      torch.empty(1, 1).fill_(NextWord.item()).to(device)],
+                                      torch.empty(1, NewLen).fill_(NextWord.item()).to(device)],
                                      dim=1)
             DecoderInput = DecoderInput.to(device=device,
                                            dtype=torch.long)
@@ -80,6 +81,8 @@ def translate(ImgPath: str,
             # Break if we predicted the sentece
             if NextWord == tokenizer.token_to_id("[EOS]"):
                 break
+
+            NewLen -= 1
 
 
     # Convert ids to tokens
