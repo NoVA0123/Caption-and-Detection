@@ -22,13 +22,16 @@ def translate(ImgPath: str,
     # Initializing model
     MaxLen = 75
     effnetv2s = vision_model(MaxLen, CnnModelPath, SpecifiedPath)
-    config = get_config(MaxLen)
     tokenizer = Tokenizer.from_file(TokenizerPath)
     model = build_transformer(effnetv2s, tokenizer.get_vocab_size(), MaxLen)
 
     # Loading the model
     ModelFilename = ModelPath
-    state = torch.load(ModelFilename)
+    if device == 'cpu':
+        state = torch.load(ModelFilename,
+                           map_location='cpu')
+    else:
+        state = torch.load(ModelFilename)
     model.load_state_dict(state['model_state_dict'])
 
 
