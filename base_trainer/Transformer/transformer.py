@@ -4,6 +4,7 @@ from base_trainer.Transformer.decoder import decoder
 from base_trainer.Transformer.encoder import encoder
 from base_trainer.Transformer.positional_encoding import positionalencoding
 from base_trainer.Transformer.embedding import embeddings
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 class Transformer(nn.Module):
@@ -33,7 +34,7 @@ class Transformer(nn.Module):
         return self.encoder(source)
         
     def decode(self, source, EncoderOutput):
-        source = self.embed(source)
+        source = self.embed(source.to(device))
         source = self.pos(source)
         return self.decoder(EncoderOutput, source)
 
