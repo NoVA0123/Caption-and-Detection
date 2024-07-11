@@ -55,14 +55,13 @@ def translate(ImgPath: str,
 
         # Initializing the decoder
         DecoderInput = torch.empty(1,1).fill_(tokenizer.token_to_id('[SOS]'))
-        DecoderInput = DecoderInput.to(device=device,
-                                       dtype=torch.long)
+        DecoderInput = DecoderInput.to(dtype=torch.long)
 
         # Generating Caption
         NewLen = MaxLen - 1
         while DecoderInput.size(1) < MaxLen:
             print('Doing the value')
-            Output = model.decode(DecoderInput, EncoderOutput).to(device)
+            Output = model.decode(DecoderInput.to(device), EncoderOutput).to(device)
             print('Value is stored')
 
             # Project next toekn
