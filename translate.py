@@ -54,7 +54,7 @@ def translate(ImgPath: str,
         EncoderOutput = model.encode(Img, MaxLen, 1).to(device)
 
         # Initializing the decoder
-        DecoderInput = torch.empty(1,75).fill_(tokenizer.token_to_id('[SOS]'))
+        DecoderInput = torch.empty(1,1).fill_(tokenizer.token_to_id('[SOS]'))
         DecoderInput = DecoderInput.to(device=device,
                                        dtype=torch.long)
 
