@@ -138,7 +138,7 @@ def train(TrainPath: str,
     # Optimzer
     Optimizer = torch.optim.Adam(model.parameters(),
                                  lr=config['lr'],
-                                 eps=1e-2)
+                                 eps=1e-9)
 
 
     # Initializing training method

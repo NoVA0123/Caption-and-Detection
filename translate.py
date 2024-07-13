@@ -24,7 +24,7 @@ def translate(ImgPath: str,
     MaxLen = 75
     effnetv2s = vision_model(MaxLen, CnnModelPath, SpecifiedPath)
     tokenizer = Tokenizer.from_file(TokenizerPath)
-    model = build_transformer(effnetv2s, tokenizer.get_vocab_size(), MaxLen)
+    model = build_transformer(effnetv2s, tokenizer.get_vocab_size(), MaxLen).to(device)
     print('\nModel has been initialized.')
 
     # Loading the model

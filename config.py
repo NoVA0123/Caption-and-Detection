@@ -5,7 +5,7 @@ def get_config(MaxSeqLen: int,
     return {
             'batch_size': 8,
             'num_epochs': Epoch,
-            'lr': 10**-4,
+            'lr': 1e-2,
             'seq_len': MaxSeqLen,
             'd_model': 512,
             'model_folder': 'model_files/weights/caption_model',
