@@ -1,8 +1,0 @@
-pandas
-numpy
-torch
-tokenizers
-matplotlib
-pillow
-tqdm
-torchvision
