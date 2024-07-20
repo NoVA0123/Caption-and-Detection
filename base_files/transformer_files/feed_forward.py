@@ -18,7 +18,7 @@ class ffn(nn.Module):
         self.gelu = nn.GELU(approximate='tanh')
         self.proj = nn.Linear(config.nEmbed * 4,
                               config.nEmbd,
-                              dtype=torch.int)
+                              dtype=torch.float)
         self.proj.TRANSFORMER_SCALE_INIT = 1
 
     def forward(self, x):

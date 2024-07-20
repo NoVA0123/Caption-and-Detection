@@ -17,11 +17,11 @@ class transformer(nn.Module):
             # Token Embeddings at input stage
             tokEmbd = nn.Embedding(config.vocabSize,
                                    config.nEmbd,
-                                   dtype=torch.int),
+                                   dtype=torch.float),
             # Positional Embeddings
             posEmbd = nn.Embedding(config.blockSize,
                                    config.nEmbd,
-                                   dtype=torch.int),
+                                   dtype=torch.float),
             # Hidden layers or Decoder Blocks
             hid = nn.ModuleList([block(config) for _ in range(config.nLayer)]),
             # Layer normalization is applied at the end of each Decoder output
@@ -30,7 +30,7 @@ class transformer(nn.Module):
         self.head = nn.Linear(config.nEmbd,
                               config.vocabSize,
                               bias=False,
-                              dtype=torch.int)
+                              dtype=torch.float)
 
         # Cnn Model
         self.cnnModel = CnnModel
