@@ -49,7 +49,7 @@ class transformer(nn.Module):
             std = 0.02
             if hasattr(module, 'TRANSFORMER_SCALE_INIT'):
                 std *= (2 * self.config.nLayers) ** -0.5
-            torch.nn.init.normal_(module.weights, mean=0., std=std)
+            torch.nn.init.normal_(module.weight, mean=0., std=std)
             if module.bias is not None:
                 torch.nn.init.zeros_(module.bias)
         elif isinstance(module, nn.Embedding):
