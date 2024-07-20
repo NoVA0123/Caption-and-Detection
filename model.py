@@ -124,7 +124,7 @@ def train(JsonPath:str):
             Label = caption['label'].to(device)
             img = img.to(device)
             optimizer.zero_grad()
-            logits, loss = model(DecoderInput, img, label)
+            logits, loss = model(DecoderInput, img, Label)
             loss.backward()
             norm = torch.nn.utils.clip_grad_norm(model.parameters(), 1.0)
             optimizer.step()
