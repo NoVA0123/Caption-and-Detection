@@ -48,9 +48,30 @@ def train(JsonPath:str):
     if data['tokenizer_config'] is null:
         tokenizer = get_tokenizer(TrainData)
     else:
-        tokenizer = get_tokenizer(TrainData, data['tokenizer_config'])
+        tokenizer = get_tokenizer(TrainData,
+                                  data['tokenizer_config']['tokenizer_path'])
     
     '''Initializing Config parameters'''
+
+    # Initializing transformer config 
+    TrConf = data['transformer_config']
+    MaxLen = TrConf['block_size']
+    VocabSize = TrConf['vocab_size']
+    NumLayers = TrConf['number_layers']
+    NumHeads = TrConf['number_heads']
+    DModel = TrConf['d_model']
+
+    config = transformerconfig(blockSize=MaxLen,
+                               vocabSize=VocabSize,
+                               nLayers=NumLayers,
+                               nHead=NumHeads,
+                               nEmbd=DModel)
+
+    # Initializing model hyper parameters
+    ModelConfig = data['model_config']
+    BatchSize = ModelConfig['batch_size']
+    Lr = ModelConfig['learning_rate']
+    Epochs = ModelConfig['epochs']
     
     # Downloading the Cnn model
     CnnConf = data['cnn_model_config']
@@ -72,26 +93,6 @@ def train(JsonPath:str):
     ImgDataClass = imgextracter(dataframe=TrainData)
 
     ImgData = DataLoader(ImgDataClass, batch_size=BatchSize)
-
-    # Initializing transformer config 
-    TrConf = data['transformer_config']
-    MaxLen = TrConf['block_size']
-    VocabSize = TrConf['vocab_size']
-    NumLayers = TrConf['number_layers']
-    NumHeads = TrConf['number_heads']
-    DModel = TrConf['d_model']
-
-    config = transformerconfig(blockSize=MaxLen,
-                               vocabSize=VocabSize,
-                               nLayers=NumLayers,
-                               nHead=NumHeads,
-                               nEmbd=DModel)
-    
-    # Initializing model hyper parameters
-    ModelConfig = data['model_config']
-    BatchSize = ModelConfig['batch_size']
-    Lr = ModelConfig['learning_rate']
-    Epochs = ModelConfig['epochs']
 
     # Initializing the transformer model
     model = transformer(config=config,
