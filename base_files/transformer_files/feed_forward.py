@@ -19,7 +19,7 @@ class ffn(nn.Module):
         self.proj = nn.Linear(config.nEmbed * 4,
                               config.nEmbd,
                               dtype=torch.int)
-
+        self.proj.TRANSFORMER_SCALE_INIT = 1
 
     def forward(self, x):
         x = self.linear1(x)

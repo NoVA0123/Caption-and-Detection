@@ -7,11 +7,12 @@ from base_files.tokenizer_files.tokenizer import get_tokenizer, texttoid
 from base_files.dataset_files.json_extracter import caption_extracter
 from base_files.dataset_files.image_extracter import imgextracter
 import pandas as pd
-from torchvision.transforms import v2
-from torchvision.io import read_image
 from torch.utils.data import DataLoader
 import json
 from tqdm.auto import tqdm
+import time
+from argparse import ArgumentParser
+import warnings
 
 
 device = 'cpu'
@@ -24,6 +25,10 @@ if torch.cuda.is_available():
 elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
     device = 'mps'
 
+# Setting seed for reproducability
+torch.manual_seed(1337)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed(1337)
 
 def train(JsonPath:str):
     null = None
@@ -45,28 +50,7 @@ def train(JsonPath:str):
     else:
         tokenizer = get_tokenizer(TrainData, data['tokenizer_config'])
     
-    '''Initializing Hyper Parameters'''
-    # Getting vocab size
-    VocabSize = tokenizer.get_vocab_size()
-
-    # Getting Max Sequence Length
-    MaxLen = 0
-    for i in tqdm(TrainData['caption'].tolist()):
-        m = i.split()
-        if len(m) > MaxLen:
-            MaxLen = len(m)
-
-    # Initializing transformer config 
-    TrConf = data['transformer_config']
-    NumLayers = TrConf['number_layers']
-    NumHeads = TrConf['number_heads']
-    DModel = TrConf['d_model']
-
-    config = transformerconfig(blockSize=MaxLen,
-                               vocabSize=VocabSize,
-                               nLayers=NumLayers,
-                               nHead=NumHeads,
-                               nEmbd=DModel)
+    '''Initializing Config parameters'''
     
     # Downloading the Cnn model
     CnnConf = data['cnn_model_config']
@@ -76,16 +60,6 @@ def train(JsonPath:str):
                               DModel=DModel,
                               ExistingPath=ExistingPath,
                               SpecificDownloadPath=SpecificDownloadPath)
-    
-    # Initializing the transformer model
-    model = transformer(config=config,
-                        CnnModel=effnetv2s)
-    
-    # Initializing model hyper parameters
-    ModelConfig = data['model_config']
-    BatchSize = ModelConfig['batch_size']
-    Lr = ModelConfig['learning_rate']
-    Epochs = ModelConfig['epochs']
 
     # Loading caption data into dataloader
     CaptionDataClass = texttoid(tokenizer=tokenizer,
@@ -98,3 +72,80 @@ def train(JsonPath:str):
     ImgDataClass = imgextracter(dataframe=TrainData)
 
     ImgData = DataLoader(ImgDataClass, batch_size=BatchSize)
+
+    # Initializing transformer config 
+    TrConf = data['transformer_config']
+    MaxLen = TrConf['block_size']
+    VocabSize = TrConf['vocab_size']
+    NumLayers = TrConf['number_layers']
+    NumHeads = TrConf['number_heads']
+    DModel = TrConf['d_model']
+
+    config = transformerconfig(blockSize=MaxLen,
+                               vocabSize=VocabSize,
+                               nLayers=NumLayers,
+                               nHead=NumHeads,
+                               nEmbd=DModel)
+    
+    # Initializing model hyper parameters
+    ModelConfig = data['model_config']
+    BatchSize = ModelConfig['batch_size']
+    Lr = ModelConfig['learning_rate']
+    Epochs = ModelConfig['epochs']
+
+    # Initializing the transformer model
+    model = transformer(config=config,
+                        CnnModel=effnetv2s)
+    model.to(device) 
+    # To compile model and make model faster
+    model = torch.compile(model)
+
+    # Initializing optimizer
+    optimizer = torch.optim.AdamW(model.parameters(),
+                                  lr=Lr,
+                                  betas=(0.9, 0.95),
+                                  eps=1e-8)
+
+    # Training
+    Steps = 0
+    for i in tqdm(Epochs):
+        SampleImageData = tqdm(ImgData)
+        SampleCaptionData = tqdm(CaptionData)
+
+        for img, caption in zip(SampleImageData, SampleCaptionData):
+            t0 = time.time()
+            DecoderInput = caption['decoder_input'].to(device)
+            Label = caption['label'].to(device)
+            img = img.to(device)
+            optimizer.zero_grad()
+            logits, loss = model(DecoderInput, img, label)
+            loss.backward()
+            norm = torch.nn.utils.clip_grad_norm(model.parameters(), 1.0)
+            optimizer.step()
+            torch.cuda.synchronize()
+            t1 = time.time()
+            dt = t1 - t0 
+            TokensProcessed = BatchSize * MaxLen
+            TokensPerSec = TokensProcessed/dt
+            print(f"Epoch: {i} | loss: {loss.item()} | norm: {norm} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
+
+            Steps += 1
+'''
+    ModelName = 'caption_model.pt'
+    torch.save({
+        'epoch': Epochs,
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'global_step': Steps,
+        }, ModelName)'''
+
+# Argument parser
+def command_line_argument():
+    parser = ArgumentParser()
+    parser.add_argument('--path', dest='Path')
+    return parser.parse_args()
+
+if __name__ == '__main__':
+    warnings.filterwarnings('ignore')
+    JsonPath = command_line_argument()
+    train(JsonPath.Path())

@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from decoder import block
+from torch.nn import functional as F
 
 
 class transformer(nn.Module):
@@ -31,10 +32,30 @@ class transformer(nn.Module):
                               bias=False,
                               dtype=torch.int)
 
+        # Cnn Model
         self.cnnModel = CnnModel
 
+        # Pointing final Linear projection weights to token embedding weights
+        self.transformer.wte.weight = self.head.weight
 
-    def forward(self, Input, Img):
+        # Initializing weights
+        self.apply(self._init_weights)
+
+    def _init_weights(self, module):
+        '''
+        This function is to initialize weights
+        '''
+        if isinstance(module, nn.Linear):
+            std = 0.02
+            if hasattr(module, 'TRANSFORMER_SCALE_INIT'):
+                std *= (2 * self.config.nLayer) ** -0.5
+            torch.nn.init.normal_(module.weights, mean=0., std=std)
+            if module.bias is not None:
+                torch.nn.init.zeros_(module.bias)
+        elif isinstance(module, nn.Embedding):
+            torch.nn.init.normal_(module.weight, mean=0., std=0.02)
+
+    def forward(self, Input, Img, Target=None):
         # Input is of shape (BatchSize, SeqLen)
         BatchSize, SeqLen = Input.size()
         assert SeqLen <= self.config.blockSize, f"Cannot pass the sequence to the model, Error: length {SeqLen} is greater than the block size parameter for the model"
@@ -64,4 +85,10 @@ class transformer(nn.Module):
 
         # Classifying
         logits = self.head(x)
-        return logits
+
+        # Calculating loss
+        loss = None
+        if Target is not None:
+            loss = F.cross_entropy(logits.view(-1, logits.size(-1)),
+                                   Target.view(-1))
+        return logits, loss

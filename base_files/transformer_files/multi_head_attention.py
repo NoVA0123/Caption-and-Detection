@@ -16,6 +16,7 @@ class cmha(nn.Module):
         self.proj = nn.Linear(config.nEmbd,
                               config.nEmbd,
                               dtype=torch.float)
+        self.proj.TRANSFORMER_SCALE_INIT = 1
         # Regularization
         self.nHead = config.nHead
         self.nEmbd = config.nEmbd
@@ -54,16 +55,21 @@ class cmha(nn.Module):
         scalar values. After that we multiply Query and key vecotr and divide
         it by the square root value, we found before and then we fill the mask
         and at last we will find the softmax value.
-        '''
+
+        This is the attention used in 'Attention is all you need paper', but we
+        are going to use optimized variant of it called flash attention, it is
+        an inbuilt function in pytorch.
+        
         Att = (q @ k.transpose(-2, -1)) * (1. / math.sqrt(k.size(-1)))
         Att = Att.masked_fill(self.bias[:, :, :SeqLen, :SeqLen] == 0,
                               float('-inf'))
         Att = F.softmax(Att, dim=-1)
-        
         # Matrix Multiplication with Value vector
-        y = Att @ v
+        y = Att @ v'''
+        y = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+
         # Re - assemble the matrix to its original shape
-        y = y.transpose(1, 2).contigous().view(BatchSize, SeqLen, DModel)
+        y = y.transpose(1, 2).contiguous().view(BatchSize, SeqLen, DModel)
         # Output projection
         y = self.proj(y)
         return y
