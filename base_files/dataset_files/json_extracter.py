@@ -24,7 +24,7 @@ def caption_extracter(JsonPath:str,
         Combine the name and the path of the images and we got the image path to
         corresponding caption.
         '''
-        ImgName = '%012d.jpg' % sample['imgae_id']
+        ImgName = '%012d.jpg' % sample['image_id']
         ImgName = f'{ImgPath}{ImgName}'
         ImgCap.append([ImgName, sample['caption']])
 
