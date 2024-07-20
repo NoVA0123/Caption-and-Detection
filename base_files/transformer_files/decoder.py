@@ -1,6 +1,6 @@
 from torch import nn
-from feed_forward import ffn
-from multi_head_attention import cmha
+from base_files.transformer_files.feed_forward import ffn
+from base_files.transformer_files.multi_head_attention import cmha
 
 
 # Implementing Decoder block

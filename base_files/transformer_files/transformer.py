@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from decoder import block
+from base_files.transformer_files.decoder import block
 from torch.nn import functional as F
 
 
