@@ -45,7 +45,7 @@ def train(JsonPath:str):
     TrainData = caption_extracter(TrainJson, TrainImgPath)
 
     # Creating a tokenizer
-    if data['tokenizer_config'] is null:
+    if data['tokenizer_config']['tokenizer_path'] is null:
         tokenizer = get_tokenizer(TrainData)
     else:
         tokenizer = get_tokenizer(TrainData,
@@ -77,10 +77,15 @@ def train(JsonPath:str):
     CnnConf = data['cnn_model_config']
     ExistingPath = CnnConf['existing_path']
     SpecificDownloadPath = CnnConf['specific_download_path']
-    effnetv2s = get_cnn_model(MaxSeqLen=MaxLen,
-                              DModel=DModel,
-                              ExistingPath=ExistingPath,
-                              SpecificDownloadPath=SpecificDownloadPath)
+    if ExistingPath is not None and SpecificDownloadPath is not None:
+        effnetv2s = get_cnn_model(MaxSeqLen=MaxLen,
+                                  DModel=DModel,
+                                  ExistingPath=ExistingPath,
+                                  SpecificDownloadPath=SpecificDownloadPath)
+    else:
+        effnetv2s = get_cnn_model(MaxSeqLen=MaxLen,
+                                  DModel=DModel)
+
 
     # Loading caption data into dataloader
     CaptionDataClass = texttoid(tokenizer=tokenizer,
