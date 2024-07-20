@@ -36,7 +36,7 @@ class transformer(nn.Module):
         self.cnnModel = CnnModel
 
         # Pointing final Linear projection weights to token embedding weights
-        self.transformer.wte.weight = self.head.weight
+        self.transformer.tokEmbd.weight = self.head.weight
 
         # Initializing weights
         self.apply(self._init_weights)
