@@ -114,7 +114,7 @@ def train(JsonPath:str):
 
     # Training
     Steps = 0
-    for i in tqdm(Epochs):
+    for i in tqdm(range(Epochs)):
         SampleImageData = tqdm(ImgData)
         SampleCaptionData = tqdm(CaptionData)
 
