@@ -148,4 +148,4 @@ def command_line_argument():
 if __name__ == '__main__':
     warnings.filterwarnings('ignore')
     JsonPath = command_line_argument()
-    train(JsonPath.Path())
+    train(JsonPath.Path)
