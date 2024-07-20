@@ -6,7 +6,7 @@ import math
 
 class cmha(nn.Module):
     def __init__(self, config):
-        assert config.nEmbd & config.nEmbd == 0
+        assert config.nEmbd % config.nHead == 0
         super(cmha, self).__init__()
         # Query, key and value in a batch
         self.qkvLayer = nn.Linear(config.nEmbd,
