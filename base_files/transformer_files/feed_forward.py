@@ -16,7 +16,7 @@ class ffn(nn.Module):
                                  4 * config.nEmbd,
                                  dtype=torch.float)
         self.gelu = nn.GELU(approximate='tanh')
-        self.proj = nn.Linear(config.nEmbed * 4,
+        self.proj = nn.Linear(config.nEmbd * 4,
                               config.nEmbd,
                               dtype=torch.float)
         self.proj.TRANSFORMER_SCALE_INIT = 1
