@@ -37,16 +37,16 @@ class cmha(nn.Module):
         # Changing the dimensions of the matrix for multi head attention
         q = q.view(BatchSize,
                    SeqLen,
-                   self.nEmbd,
-                   DModel // self.nHead).transpose(1, 2)
+                   DModel // self.nHead,
+                   self.nHead).transpose(1, 2)
         k = k.view(BatchSize,
                    SeqLen,
-                   self.nEmbd,
-                   DModel // self.nHead).transpose(1, 2)
+                   DModel // self.nHead,
+                   self.nHead).transpose(1, 2)
         v = v.view(BatchSize,
                    SeqLen,
-                   self.nEmbd,
-                   DModel // self.nHead).transpose(1, 2)
+                   DModel // self.nHead,
+                   self.nHead).transpose(1, 2)
 
         # Applying attention
         '''
