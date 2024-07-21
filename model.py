@@ -45,7 +45,7 @@ def get_decay_lr(it:int,
         return MinLr
 
     # In between we will apply cosine function
-    DecayRatio = (it - WarmupSteps) / MaxSteps - WarmupSteps
+    DecayRatio = (it - WarmupSteps) / (MaxSteps - WarmupSteps)
     assert 0 <= DecayRatio <= 1
     Coeff = 0.5 * (1.0 + math.cos(math.pi * DecayRatio))
     return MinLr + Coeff * (MaxLr - MinLr)
