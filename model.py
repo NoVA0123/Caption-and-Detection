@@ -143,8 +143,8 @@ def train(JsonPath:str):
                                   lr=MaxLr,
                                   betas=(0.9, 0.95),
                                   eps=1e-8)'''
-    optimizer = model.configure_optimizers(weight_decay=0.1,
-                                           learning_rate=6e-4,
+    optimizer = model.configure_optimizers(WeightDecay=0.1,
+                                           LearningRate=6e-4,
                                            device=device)
 
     # Training
