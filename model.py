@@ -76,7 +76,7 @@ def train(JsonPath:str):
     # Changing sample size
     TotalSamples = data['dataset_config']['max_sample']
     TrainData = TrainData.sample(frac=TotalSamples,
-                                 random_state=1337)
+                                 random_state=1337).reset_index(drop=True)
     
     '''Initializing Config parameters'''
 
