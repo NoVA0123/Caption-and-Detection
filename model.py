@@ -184,7 +184,7 @@ def train(JsonPath:str):
             dt = t1 - t0 
             TokensProcessed = BatchSize * MaxLen
             TokensPerSec = TokensProcessed/dt
-            print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {loss.item()} | lr: {lr} | norm: {norm} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
+            print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {loss.item(): .2f} | lr: {lr: .2f} | norm: {norm: .2f} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
 
             GlobalSteps += 1
             LocalSteps += 1
