@@ -74,7 +74,7 @@ class texttoid:
         DecInputTok = self.tokenizer.encode(x).ids
         
         # Finding number of Padding tokens
-        NumPadTok = self.maxSeqLen - len(DecInputTok)
+        NumPadTok = self.maxSeqLen - len(DecInputTok) - 1
 
         # Concatenating tensors (Sos, Input, Padding)
         DecoderInput = torch.cat([

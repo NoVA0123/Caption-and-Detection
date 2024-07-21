@@ -17,11 +17,11 @@
         "tokenizer_path": null
     },
     "transformer_config":{
-        "block_size": 128,
+        "block_size": 64,
         "vocab_size": 20480,
         "number_layers": 6,
         "number_heads": 6,
-        "d_model": 768
+        "d_model": 384
     },
     "model_config":{
         "batch_size": 8,
