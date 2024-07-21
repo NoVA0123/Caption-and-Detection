@@ -1,18 +1,18 @@
 import torch
-from torch.cuda import is_available
+import time
+import pandas as pd
+from torch.utils.data import DataLoader
+import json
+from tqdm.auto import tqdm
+from argparse import ArgumentParser
+import warnings
+import math
 from base_files.transformer_files.dataclass import transformerconfig
 from base_files.transformer_files.transformer import transformer
 from base_files.cnn_model_files.cnn_model import get_cnn_model
 from base_files.tokenizer_files.tokenizer import get_tokenizer, texttoid
 from base_files.dataset_files.json_extracter import caption_extracter
 from base_files.dataset_files.image_extracter import imgextracter
-import pandas as pd
-from torch.utils.data import DataLoader
-import json
-from tqdm.auto import tqdm
-import time
-from argparse import ArgumentParser
-import warnings
 
 
 device = 'cpu'
@@ -30,6 +30,28 @@ torch.manual_seed(1337)
 if torch.cuda.is_available():
     torch.cuda.manual_seed(1337)
 
+
+def get_decay_lr(it:int,
+                 WarmupSteps:int,
+                 MaxSteps:int,
+                 MaxLr:float,
+                 MinLr:float):
+    # Linear decay for warmup steps
+    if it < WarmupSteps:
+        return MaxLr * (it + 1) / WarmupSteps
+    
+    # Constant learning rate
+    if it > MaxSteps:
+        return MinLr
+
+    # In between we will apply cosine function
+    DecayRatio = (it - WarmupSteps) / MaxSteps - WarmupSteps
+    assert 0 <= DecayRatio <= 1
+    Coeff = 0.5 * (1.0 + math.cos(math.pi * DecayRatio))
+    return MinLr + Coeff * (MaxLr - MinLr)
+
+
+# Training the dataset
 def train(JsonPath:str):
     null = None
     
@@ -50,6 +72,11 @@ def train(JsonPath:str):
     else:
         tokenizer = get_tokenizer(TrainData,
                                   data['tokenizer_config']['tokenizer_path'])
+
+    # Changing sample size
+    TotalSamples = data['dataset_config']['max_sample']
+    TrainData = TrainData.sample(frac=TotalSamples,
+                                 random_state=1337)
     
     '''Initializing Config parameters'''
 
@@ -70,7 +97,6 @@ def train(JsonPath:str):
     # Initializing model hyper parameters
     ModelConfig = data['model_config']
     BatchSize = ModelConfig['batch_size']
-    Lr = ModelConfig['learning_rate']
     Epochs = ModelConfig['epochs']
     
     # Downloading the Cnn model
@@ -106,32 +132,59 @@ def train(JsonPath:str):
     # To compile model and make model faster
     model = torch.compile(model)
 
-    # Initializing optimizer
-    optimizer = torch.optim.AdamW(model.parameters(),
-                                  lr=Lr,
+    '''Initializing optimizer'''
+    # Making a decay learning rate
+    MaxLr = ModelConfig['learning_rate']['max_lr']
+    MinLr = MaxLr * 0.1
+    WarmupSteps = ModelConfig['learning_rate']['warmup_steps']
+    MaxSteps = ModelConfig['learning_rate']['max_steps']
+
+    '''optimizer = torch.optim.AdamW(model.parameters(),
+                                  lr=MaxLr,
                                   betas=(0.9, 0.95),
-                                  eps=1e-8)
+                                  eps=1e-8)'''
+    optimizer = model.configure_optimizers(weight_decay=0.1,
+                                           learning_rate=6e-4,
+                                           device=device)
 
     # Training
     GlobalSteps = 0
     for i in tqdm(range(Epochs)):
         LocalSteps = 0
         for img, caption in zip(ImgData, CaptionData):
-            t0 = time.time()
+            t0 = time.time() # Storing time of begining of the step
+
+            # Storing values
             DecoderInput = caption['decoder_input'].to(device)
             Label = caption['label'].to(device)
             img = img.to(device)
-            optimizer.zero_grad()
+
+            optimizer.zero_grad() # Setting optimizer to zero for every step
+
+            # Getting loss from the model
             logits, loss = model(DecoderInput, img, Label)
-            loss.backward()
+
+            loss.backward() # Applying backpropogation
+            # Applying norm on gradients to reduce shock of the model
             norm = torch.nn.utils.clip_grad_norm(model.parameters(), 1.0)
-            optimizer.step()
+            
+            # Decay in learning rate
+            lr = get_decay_lr(GlobalSteps,
+                              WarmupSteps=WarmupSteps,
+                              MaxSteps=MaxSteps,
+                              MaxLr=MaxLr,
+                              MinLr=MinLr)
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = lr
+            optimizer.step() # Applying a backpropogation step
+            # Synchronizing GPU and CPU runtime
             torch.cuda.synchronize()
+            # Storing output time
             t1 = time.time()
             dt = t1 - t0 
             TokensProcessed = BatchSize * MaxLen
             TokensPerSec = TokensProcessed/dt
-            print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {loss.item()} | norm: {norm} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
+            print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {loss.item()} | lr: {lr} | norm: {norm} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
 
             GlobalSteps += 1
             LocalSteps += 1

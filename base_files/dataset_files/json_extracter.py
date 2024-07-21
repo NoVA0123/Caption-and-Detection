@@ -5,7 +5,7 @@ from tqdm.auto import tqdm
 
 
 def caption_extracter(JsonPath:str,
-                     ImgPath:str) -> pd.DataFrame:
+                      ImgPath:str) -> pd.DataFrame:
 
     # Loading json
     with open(JsonPath, 'r') as f:

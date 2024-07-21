@@ -1,3 +1,4 @@
+import inspect
 import torch
 from torch import nn
 from base_files.transformer_files.decoder import block
@@ -54,6 +55,44 @@ class transformer(nn.Module):
                 torch.nn.init.zeros_(module.bias)
         elif isinstance(module, nn.Embedding):
             torch.nn.init.normal_(module.weight, mean=0., std=0.02)
+
+    def configure_optimizers(self,
+                             WeightDecay:float,
+                             LearningRate:float,
+                             device):
+        # Find all the parameters that requires gradients
+        Params = {NumParams: p for NumParams, p in self.named_parameters()}
+        Params = {NumParams: p for NumParams, p in Params.items() if p.requires_grad}
+
+        '''
+        Create optimizer group of weight decay and non decay. Tensors with
+        higher dimensions require weight decay to reach optimum value and tensors
+        with lower dimensions like bias do not require weight decay.
+        '''
+        DecayParams = {p for _, p in Params.items() if p.dim() >= 2}
+        NonDecayParams = {p for _, p in Params.items() if p.dim() < 2}
+        OptimGroups = [
+                {'params': DecayParams, 'weight_decay': WeightDecay},
+                {'params': NonDecayParams, 'weight_decay': 0.0}
+                ]
+
+        # To find number of decay and non decay parameters
+        NumDecayParams = sum(p.numel() for p in DecayParams)
+        NumNonDecayParams = sum(p.numel() for p in NonDecayParams)
+        print(f"Number of decaying parameter tensors: {len(DecayParams)}, with {NumDecayParams} parameters")
+        print(f"Number of non decaying parameter tensors: {len(NonDecayParams)}, with {NumNonDecayParams} parameters")
+
+        # Check fused is available or not
+        FusedAvailable = 'fused' in inspect.signature(torch.optim.AdamW).parameters
+        UseFused = FusedAvailable and 'cuda' in device
+        print(f'Using fused AdamW: {UseFused}')
+        # Configuring optimizer
+        Optimizer = torch.optim.AdamW(OptimGroups,
+                                      lr=LearningRate,
+                                      betas=(0.9, 0.95),
+                                      eps=1e-8,
+                                      fused=FusedAvailable)
+        return Optimizer
 
     def forward(self, Input, Img, Target=None):
         # Input is of shape (BatchSize, SeqLen)
