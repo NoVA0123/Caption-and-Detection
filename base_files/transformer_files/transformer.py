@@ -69,8 +69,8 @@ class transformer(nn.Module):
         higher dimensions require weight decay to reach optimum value and tensors
         with lower dimensions like bias do not require weight decay.
         '''
-        DecayParams = {p for _, p in Params.items() if p.dim() >= 2}
-        NonDecayParams = {p for _, p in Params.items() if p.dim() < 2}
+        DecayParams = [p for _, p in Params.items() if p.dim() >= 2]
+        NonDecayParams = [p for _, p in Params.items() if p.dim() < 2]
         OptimGroups = [
                 {'params': DecayParams, 'weight_decay': WeightDecay},
                 {'params': NonDecayParams, 'weight_decay': 0.0}
