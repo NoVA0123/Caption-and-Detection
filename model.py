@@ -113,12 +113,10 @@ def train(JsonPath:str):
                                   eps=1e-8)
 
     # Training
-    Steps = 0
+    GlobalSteps = 0
     for i in tqdm(range(Epochs)):
-        SampleImageData = tqdm(ImgData)
-        SampleCaptionData = tqdm(CaptionData)
-
-        for img, caption in zip(SampleImageData, SampleCaptionData):
+        LocalSteps = 0
+        for img, caption in zip(ImgData, CaptionData):
             t0 = time.time()
             DecoderInput = caption['decoder_input'].to(device)
             Label = caption['label'].to(device)
@@ -133,16 +131,17 @@ def train(JsonPath:str):
             dt = t1 - t0 
             TokensProcessed = BatchSize * MaxLen
             TokensPerSec = TokensProcessed/dt
-            print(f"Epoch: {i} | loss: {loss.item()} | norm: {norm} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
+            print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {loss.item()} | norm: {norm} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
 
-            Steps += 1
+            GlobalSteps += 1
+            LocalSteps += 1
 '''
     ModelName = 'caption_model.pt'
     torch.save({
         'epoch': Epochs,
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
-        'global_step': Steps,
+        'global_step': GlobalSteps,
         }, ModelName)'''
 
 # Argument parser
