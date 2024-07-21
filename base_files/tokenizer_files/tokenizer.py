@@ -57,11 +57,11 @@ class texttoid:
         self.dataframe = dataframe
 
         self.sosToken = torch.tensor([tokenizer.token_to_id('[SOS]')],
-                                     dtype=torch.int)
+                                     dtype=torch.long)
         self.eosToken = torch.tensor([tokenizer.token_to_id('[EOS]')],
-                                     dtype=torch.int)
+                                     dtype=torch.long)
         self.padToken = torch.tensor([tokenizer.token_to_id('[PAD]')],
-                                     dtype=torch.int)
+                                     dtype=torch.long)
 
     def __len__(self):
         return len(self.dataframe)
@@ -79,14 +79,14 @@ class texttoid:
         # Concatenating tensors (Sos, Input, Padding)
         DecoderInput = torch.cat([
             self.sosToken,
-            torch.tensor(DecInputTok, dtype=torch.int),
-            torch.tensor([self.padToken] * NumPadTok, dtype=torch.int)
+            torch.tensor(DecInputTok, dtype=torch.long),
+            torch.tensor([self.padToken] * NumPadTok, dtype=torch.long)
             ])
 
         label = torch.cat([
-            torch.tensor(DecInputTok, dtype=torch.int),
+            torch.tensor(DecInputTok, dtype=torch.long),
             self.eosToken,
-            torch.tensor([self.padToken] * NumPadTok, dtype=torch.int)
+            torch.tensor([self.padToken] * NumPadTok, dtype=torch.long)
             ])
 
 
