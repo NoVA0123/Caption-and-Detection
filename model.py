@@ -23,11 +23,11 @@ from base_files.dataset_files.image_extracter import imgextracter
 
 
 # Adding ports
-sock = socket.socket()
+'''sock = socket.socket()
 sock.bind(("", 0))
 name = str(sock.getsockname()[1])
 os.environ["MASTER_ADDR"] = "localhost"
-os.environ["MASTER_PORT"] = name
+os.environ["MASTER_PORT"] = name'''
 # Configurig device
 print('Loading the device: \n\n')
 
