@@ -33,10 +33,12 @@ if DistDataParallel:
     '''
     assert torch.cuda.is_available(), "We dont multiple gpus for DDP"
     print("We are using Multiple GPU's. \n\n")
-    init_process_group(backend='nccl')
     DDPRank = int(os.environ['RANK']) 
     DDPLocalRank = int(os.environ['LOCAL_RANK']) # Ordering the GPU's
     DDPWorldSize = int(os.environ['WORLD_SIZE']) # Number of GPU's
+    init_process_group(backend='nccl',
+                       rank=DDPRank,
+                       world_size=DDPWorldSize)
     print("Number of GPU's: {DDPWorldSize}")
     device = f'cuda:{DDPLocalRank}'
     torch.cuda.set_device(device)
