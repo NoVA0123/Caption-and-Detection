@@ -33,6 +33,6 @@
         }
     },
     "dataset_config": {
-        "max_sample": 0.25
+        "max_sample": 131072
     }
 }
