@@ -21,6 +21,9 @@ from base_files.dataset_files.json_extracter import caption_extracter
 from base_files.dataset_files.image_extracter import imgextracter
 
 
+# Adding ports
+os.environ["MASTER_ADDR"] = "localhost"
+os.environ["MASTER_PORT"] = "12355"
 # Configurig device
 print('Loading the device: \n\n')
 
