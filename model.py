@@ -12,6 +12,7 @@ import math
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed import init_process_group, destroy_process_group
 import torch.distributed as dist
+import torch.multiprocessing as mp
 from base_files.transformer_files.dataclass import transformerconfig
 from base_files.transformer_files.transformer import transformer
 from base_files.cnn_model_files.cnn_model import get_cnn_model
@@ -357,4 +358,6 @@ def command_line_argument():
 if __name__ == '__main__':
     warnings.filterwarnings('ignore')
     JsonPath = command_line_argument()
-    train(JsonPath.Path)
+    mp.spawn(train,
+             args=(JsonPath),
+             nprocs=DDPWorldSize)
