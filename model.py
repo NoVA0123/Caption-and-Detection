@@ -1,13 +1,17 @@
 import torch
 import time
+import os
 import pandas as pd
-from torch.cuda import is_bf16_supported
 from torch.utils.data import DataLoader
+from torch.utils.data.distributed import DistributedSampler
 import json
 from tqdm.auto import tqdm
 from argparse import ArgumentParser
 import warnings
 import math
+from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.distributed import init_process_group, destroy_process_group
+import torch.distributed as dist
 from base_files.transformer_files.dataclass import transformerconfig
 from base_files.transformer_files.transformer import transformer
 from base_files.cnn_model_files.cnn_model import get_cnn_model
@@ -18,15 +22,44 @@ from base_files.dataset_files.image_extracter import imgextracter
 
 # Configurig device
 print('Loading the device: \n\n')
-device = 'cpu'
 
-# Use GPU if it is available
-if torch.cuda.is_available():
-    device = 'cuda'
+# Checking if multiple GPU's are available or not.
+DistDataParallel = int(os.environ.get('RANK', -1)) != -1
 
-# Use MPS if it is available(Apple devices only)
-elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
-    device = 'mps'
+if DistDataParallel:
+    '''
+    We need to set device appropriately according to the rank as Distributed
+    Data Parallel uses CUDA(GPU) for distributing load on different GPU.
+    '''
+    assert torch.cuda.is_available(), "We dont multiple gpus for DDP"
+    print("We are using Multiple GPU's. \n\n")
+    init_process_group(backend='nccl')
+    DDPRank = int(os.environ['RANK']) 
+    DDPLocalRank = int(os.environ['LOCAL_RANK']) # Ordering the GPU's
+    DDPWorldSize = int(os.environ['WORLD_SIZE']) # Number of GPU's
+    print("Number of GPU's: {DDPWorldSize}")
+    device = f'cuda:{DDPLocalRank}'
+    torch.cuda.set_device(device)
+    master_process = DDPRank == 0
+
+else:
+    # Vanilla, non-DDP runs
+    DDPRank = 0
+    DDPLocalRank = 0
+    DDPWorldSize = 0
+    master_process = True
+
+    # Attempt to autodetect device
+    print('Autodetecting the Device... \n\n')
+    device = 'cpu'
+
+    # Use GPU if it is available
+    if torch.cuda.is_available():
+        device = 'cuda'
+
+    # Use MPS if it is available(Apple devices only)
+    elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        device = 'mps'
 
 print('Device has been loaded!\n\n')
 print(f"Current Device: {device}")
@@ -38,6 +71,7 @@ if torch.cuda.is_available():
     torch.cuda.manual_seed(1337)
 
 
+# Creating a function to reduce learning rate using decay method
 def get_decay_lr(it:int,
                  WarmupSteps:int,
                  MaxSteps:int,
@@ -58,12 +92,29 @@ def get_decay_lr(it:int,
     return MinLr + Coeff * (MaxLr - MinLr)
 
 
+# Function for distributed data
+def parallel_data_sampler(rank,
+                          WorldSize,
+                          dataset,
+                          batch_size:int):
+
+    sampler = DistributedSampler(dataset,
+                                 num_replicas=WorldSize,
+                                 rank=rank,
+                                 shuffle=False)
+
+    dataloader = DataLoader(dataset,
+                            batch_size=batch_size,
+                            sampler=sampler,
+                            shuffle=False)
+
+    return dataloader
+
 # Training the dataset
 def train(JsonPath:str):
     null = None
     
     # Loading json
-    print("Loading the captions and image paths: \n\n")
     with open (JsonPath, 'r') as f:
         data = json.load(f)
 
@@ -73,17 +124,14 @@ def train(JsonPath:str):
     
     # Extracting caption and storing corresponding image path
     TrainData = caption_extracter(TrainJson, TrainImgPath)
-    print("Captions and image paths have been loaded into a dataframe. \n\n")
 
     # Creating a tokenizer
-    print('Creating tokenizer: \n\n')
     if data['tokenizer_config']['tokenizer_path'] is null:
         tokenizer = get_tokenizer(TrainData)
     else:
         tokenizer = get_tokenizer(TrainData,
                                   data['tokenizer_config']['tokenizer_path'])
 
-    print("Tokenizer has been created! \n\n")
 
     # Changing sample size
     TotalSamples = data['dataset_config']['max_sample']
@@ -92,7 +140,6 @@ def train(JsonPath:str):
     
     '''Initializing Config parameters'''
 
-    print('Initializing configuration: \n\n')
     # Initializing transformer config 
     TrConf = data['transformer_config']
     MaxLen = TrConf['block_size']
@@ -113,7 +160,6 @@ def train(JsonPath:str):
     Epochs = ModelConfig['epochs']
     
     # Downloading the Cnn model
-    print("Loading CNN model: \n\n")
     CnnConf = data['cnn_model_config']
     ExistingPath = CnnConf['existing_path']
     SpecificDownloadPath = CnnConf['specific_download_path']
@@ -125,36 +171,49 @@ def train(JsonPath:str):
     else:
         effnetv2s = get_cnn_model(MaxSeqLen=MaxLen,
                                   DModel=DModel)
-    print('Model has been loaded: \n\n')
 
 
     # Loading caption data into dataloader
-    print('Creating a DataLoader: \n\n')
     CaptionDataClass = texttoid(tokenizer=tokenizer,
                           MaxSeqLen=MaxLen,
                           dataframe=TrainData)
 
-    CaptionData = DataLoader(CaptionDataClass, batch_size=BatchSize)
+    CaptionData = parallel_data_sampler(rank=DDPRank,
+                                        WorldSize=DDPWorldSize,
+                                        dataset=CaptionDataClass,
+                                        batch_size=BatchSize)
 
     # Loading Image data into dataloader
     ImgDataClass = imgextracter(dataframe=TrainData)
 
-    ImgData = DataLoader(ImgDataClass, batch_size=BatchSize)
-    print("DataLoader for both Images and captions have been created.\n\n")
+    ImgData = parallel_data_sampler(rank=DDPRank,
+                                    WorldSize=DDPWorldSize,
+                                    dataset=ImgDataClass,
+                                    batch_size=BatchSize)
 
     # Initializing the transformer model
-    print("Initializing the model: \n\n")
     model = transformer(config=config,
                         CnnModel=effnetv2s)
     model.to(device) 
     # To compile model and make model faster
-    print("Model has been created. Now, Compiling the model: \n \n")
     model = torch.compile(model)
-    print("Model has been compiled. \n\n")
+    if DistDataParallel:
+        '''
+        DDP function is neccessary for Distributive computing because, during
+        backward pass each gpu has different (due to different parts of
+        dataset) gradient. This will create problem for optimizer, to fix this
+        issue DDP averages gradient of every rank(GPU) and replaces rank's
+        gradient with average. Easy way to understand: DDP synchronizes
+        gradients of every GPU.
+        '''
+        model = DDP(model,
+                    device_ids=[DDPLocalRank])
+
+    # We need to create raw model for our configure optimizer to work properly
+    raw_model = model.module if DistDataParallel else model
 
     '''Initializing optimizer'''
     # Making a decay learning rate
-    print("Configuring optimizer with decayed learning rate: \n\n")
     MaxLr = ModelConfig['learning_rate']['max_lr']
     MinLr = MaxLr * 0.1
     WarmupSteps = ModelConfig['learning_rate']['warmup_steps']
@@ -164,17 +223,17 @@ def train(JsonPath:str):
                                   lr=MaxLr,
                                   betas=(0.9, 0.95),
                                   eps=1e-8)'''
-    optimizer = model.configure_optimizers(WeightDecay=0.1,
+    optimizer = raw_model.configure_optimizers(WeightDecay=0.1,
                                            LearningRate=6e-4,
                                            device=device)
-    print('Optimizer has been configured.')
 
     # Creating gradient accumulation step to increase batch size
     TotalBatchSize = 2**19
-    assert TotalBatchSize % (BatchSize * MaxLen) == 0, "Make sure the total batch size is divisible by Batch * SeqLen"
-    GradAccumSteps = TotalBatchSize // (BatchSize * MaxLen)
-    print(f"Total batch size is: {TotalBatchSize} ")
-    print(f"-> calculated gradient accumulation steps: {GradAccumSteps}")
+    assert TotalBatchSize % (BatchSize * MaxLen * DDPWorldSize) == 0, "Make sure the total batch size is divisible by Batch * SeqLen"
+    GradAccumSteps = TotalBatchSize // (BatchSize * MaxLen * DDPWorldSize)
+    if master_process: # This will prevent displaying text multiple times
+        print(f"Total batch size is: {TotalBatchSize} ")
+        print(f"-> calculated gradient accumulation steps: {GradAccumSteps}")
 
     # Training
     GlobalSteps = 0
@@ -189,8 +248,11 @@ def train(JsonPath:str):
 
             optimizer.zero_grad() # Setting optimizer to zero for every step
 
+            # Initializing loss accumalation(details are present in loss calculating code)
+            LossAccum = 0.
             # Accumulated gradient calculation
-            for _ in range(GradAccumSteps):
+            for MicroSteps in range(GradAccumSteps):
+
                 # Iterating the dataset
                 caption = next(IterCapData)
                 img = next(IterImgData)
@@ -200,9 +262,10 @@ def train(JsonPath:str):
                 Label = caption['label'].to(device)
                 img = img.to(device)
 
+
                 '''
-                Autocasting to datatypes of model to bfloat16 as it is 4x faster
-                than normal float32. It reduces the decimal value.
+                Autocasting to datatypes of model to bfloat16 as it is 4x
+                faster than normal float32. It reduces the decimal value.
                 '''
                 if torch.cuda.is_bf16_supported():
                     with torch.autocast(device_type=device,
@@ -211,14 +274,41 @@ def train(JsonPath:str):
                 else:
                     _, loss = model(DecoderInput, img, Label)
 
+
                 '''
                 To calculate Gradient accumulation for larger batches, we need
                 to add loss for each micro batch size and scaled it down during
                 each step.
                 '''
                 loss = loss / GradAccumSteps
-                loss.backward()
+                LossAccum += loss.detach() # Keeps on adding gradient
+                '''
+                Gradient syncing is stopped before last step because it
+                increase training process and synchronize every inner loop will
+                waste time. We will not synchronize gradients of ranks until
+                last step, we will just add them up and reduce them alltogther.
 
+
+                Reason why we do Gradient Accumulation:-
+                Reason for doing gradient accumulation is because larger batch 
+                have tendency to smoothen out the convergence while small 
+                batches have tendency to converge faster. Large batches are 
+                good on large dataset but are costlier to train. To fix this
+                gradient accumulation is used on smaller batches to accumulate
+                gradient. If gradients are accumulated we can average the loss
+                and get the same result as that on larger batch. But not doing
+                will not accumulate and will not smooth out the training process,
+                i.e. model will not converge(minimum loss) smoothly and will shock
+                the model.
+                '''
+                if DistDataParallel:
+                    model.require_backward_grad_sync = (MicroStep == GradAccumSteps - 1)
+                loss.backward()
+            
+            # Reduce gradients alltogther
+            if DistDataParallel:
+                dist.all_reduce(LossAccum,
+                                op=dist.ReduceOp.AVG)
             # Applying norm on gradients to reduce shock of the model
             norm = torch.nn.utils.clip_grad_norm(model.parameters(), 1.0)
             
@@ -236,12 +326,17 @@ def train(JsonPath:str):
             # Storing output time
             t1 = time.time()
             dt = t1 - t0 
-            TokensProcessed = BatchSize * MaxLen
-            TokensPerSec = TokensProcessed/dt
-            print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {loss.item(): .2f} | lr: {lr: .5e} | norm: {norm: .2f} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
+            TokensProcessed = BatchSize * MaxLen * GradAccumSteps * DDPWorldSize
+            TokensPerSec = TokensProcessed / dt
 
             GlobalSteps += 1
             LocalSteps += 1
+            if master_process:
+                print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} | norm: {norm: .2f} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
+
+# Destroy all parallel process
+if DistDataParallel:
+    destroy_process_group()
 '''
     ModelName = 'caption_model.pt'
     torch.save({
