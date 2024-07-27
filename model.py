@@ -1,6 +1,7 @@
 import torch
 import time
 import pandas as pd
+from torch.cuda import is_bf16_supported
 from torch.utils.data import DataLoader
 import json
 from tqdm.auto import tqdm
@@ -203,7 +204,12 @@ def train(JsonPath:str):
                 Autocasting to datatypes of model to bfloat16 as it is 4x faster
                 than normal float32. It reduces the decimal value.
                 '''
-                _, loss = model(DecoderInput, img, Label)
+                if torch.cuda.is_bf16_supported():
+                    with torch.autocast(device_type=device,
+                                        dtype=torch.bfloat16):
+                        _, loss = model(DecoderInput, img, Label)
+                else:
+                    _, loss = model(DecoderInput, img, Label)
 
                 '''
                 To calculate Gradient accumulation for larger batches, we need
