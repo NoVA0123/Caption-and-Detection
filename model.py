@@ -170,7 +170,7 @@ def train(JsonPath:str):
 
     # Creating gradient accumulation step to increase batch size
     TotalBatchSize = 2**19
-    assert BatchSize % (BatchSize * MaxLen) == 0, "Make sure the total batch size is divisible by Batch * SeqLen"
+    assert TotalBatchSize % (BatchSize * MaxLen) == 0, "Make sure the total batch size is divisible by Batch * SeqLen"
     GradAccumSteps = TotalBatchSize // (BatchSize * MaxLen)
     print(f"Total batch size is: {TotalBatchSize} ")
     print(f"-> calculated gradient accumulation steps: {GradAccumSteps}")
