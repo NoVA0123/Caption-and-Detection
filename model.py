@@ -203,10 +203,7 @@ def train(JsonPath:str):
                 Autocasting to datatypes of model to bfloat16 as it is 4x faster
                 than normal float32. It reduces the decimal value.
                 '''
-                
-                with torch.autocast(device_type=device,
-                                    dtype=torch.bfloat16):
-                    _, loss = model(DecoderInput, img, Label)
+                _, loss = model(DecoderInput, img, Label)
 
                 '''
                 To calculate Gradient accumulation for larger batches, we need
