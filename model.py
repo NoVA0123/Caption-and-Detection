@@ -1,6 +1,7 @@
 import torch
 import time
 import os
+import socket
 import pandas as pd
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
@@ -22,8 +23,11 @@ from base_files.dataset_files.image_extracter import imgextracter
 
 
 # Adding ports
+sock = socket.socket()
+sock.bind(("", 0))
+name = str(sock.getsockname()[1])
 os.environ["MASTER_ADDR"] = "localhost"
-os.environ["MASTER_PORT"] = "12355"
+os.environ["MASTER_PORT"] = name
 # Configurig device
 print('Loading the device: \n\n')
 
