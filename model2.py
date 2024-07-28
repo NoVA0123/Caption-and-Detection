@@ -229,7 +229,7 @@ def train(rank:int,
                                   eps=1e-8)'''
     optimizer = raw_model.configure_optimizers(WeightDecay=0.1,
                                            LearningRate=6e-4,
-                                           device=device)
+                                           device=device_type)
 
     # Creating gradient accumulation step to increase batch size
     TotalBatchSize = 2**19
