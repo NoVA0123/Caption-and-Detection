@@ -27,7 +27,6 @@ from base_files.dataset_files.image_extracter import imgextracter
 sock = socket.socket()
 sock.bind(("", 0))
 name = str(sock.getsockname()[1])
-os.environ["MASTER_ADDR"] = "localhost"
 os.environ["MASTER_PORT"] = name
 
 # Configurig device
