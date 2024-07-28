@@ -45,11 +45,11 @@ if DistDataParallel:
     '''
     sock = socket.socket()
     sock.bind(("", 0))
-    name = str(sock.getsockname()[1])'''
+    name = str(sock.getsockname()[1])
     os.environ["MASTER_PORT"] = "39830"
     print('counted gpus')
     if DDPRank != 0:
-        os.environ['MASTER_PORT'] = "39831"
+        os.environ['MASTER_PORT'] = "39831"'''
     init_process_group(backend='nccl')
     print("Number of GPU's: {DDPWorldSize}")
     device = f'cuda:{DDPLocalRank}'
@@ -365,9 +365,8 @@ def command_line_argument():
     parser.add_argument('--path', dest='Path')
     return parser.parse_args()
 
-if __name__ == '__main__':
-    warnings.filterwarnings('ignore')
-    JsonPath = command_line_argument()
-    mp.spawn(train,
-             args=(JsonPath),
-             nprocs=DDPWorldSize)
+
+# Running the model
+warnings.filterwarnings('ignore')
+JsonPath = command_line_argument()
+train(JsonPath.Path)
