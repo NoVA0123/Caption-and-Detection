@@ -39,6 +39,9 @@ if DistDataParallel:
     init_process_group(backend='nccl')
     DDPRank = dist.get_rank()
     DDPWorldSize = torch.cuda.device_count() # Number of GPU's
+    init_process_group(backend='nccl',
+                       world_size=DDPWorldSize,
+                       rank=DDPRank)
 
     # Adding ports
     '''
