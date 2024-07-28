@@ -42,11 +42,14 @@ if DistDataParallel:
     DDPWorldSize = int(os.environ['WORLD_SIZE']) # Number of GPU's
 
     # Adding ports
+    '''
     sock = socket.socket()
     sock.bind(("", 0))
-    name = str(sock.getsockname()[1])
-    os.environ["MASTER_PORT"] = name
+    name = str(sock.getsockname()[1])'''
+    os.environ["MASTER_PORT"] = "39830"
     print('counted gpus')
+    if DDPRank != 0:
+        os.environ['MASTER_PORT'] = "39831"
     init_process_group(backend='nccl')
     print("Number of GPU's: {DDPWorldSize}")
     device = f'cuda:{DDPLocalRank}'
