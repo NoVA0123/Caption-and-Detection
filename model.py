@@ -1,7 +1,6 @@
 import torch
 import time
 import os
-import socket
 import pandas as pd
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
@@ -26,7 +25,7 @@ from base_files.dataset_files.image_extracter import imgextracter
 print('Loading the device: \n\n')
 
 # Checking if multiple GPU's are available or not.
-DistDataParallel = int(os.environ.get('RANK', -1)) != -1
+DistDataParallel = torch.cuda.device_count() >= 2
 
 if DistDataParallel:
     '''
@@ -38,9 +37,9 @@ if DistDataParallel:
     print("We are using Multiple GPU's. \n\n")
 
     init_process_group(backend='nccl')
-    DDPRank = int(os.environ['RANK']) 
-    DDPLocalRank = int(os.environ['LOCAL_RANK']) # Ordering the GPU's
-    DDPWorldSize = int(os.environ['WORLD_SIZE']) # Number of GPU's
+    DDPRank = dist.get_rank()
+    DDPWorldSize = torch.cuda.device_count() # Number of GPU's
+    DDPLocalRank = list(range(DDPWorldSize)) # Ordering the GPU's
 
     # Adding ports
     '''
@@ -221,7 +220,7 @@ def train(JsonPath:str):
         gradients of every GPU.
         '''
         model = DDP(model,
-                    device_ids=[DDPLocalRank])
+                    device_ids=DDPLocalRank)
 
     # We need to create raw model for our configure optimizer to work properly
     raw_model = model.module if DistDataParallel else model
