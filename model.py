@@ -369,4 +369,6 @@ def command_line_argument():
 # Running the model
 warnings.filterwarnings('ignore')
 JsonPath = command_line_argument()
-train(JsonPath.Path)
+mp.spawn(train,
+         args=(JsonPath.Path),
+         nprocs=DDPWorldSize)
