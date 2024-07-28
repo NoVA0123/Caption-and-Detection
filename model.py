@@ -49,8 +49,8 @@ if DistDataParallel:
     os.environ["MASTER_PORT"] = "39830"
     print('counted gpus')
     if DDPRank != 0:
-        os.environ['MASTER_PORT'] = "39831"'''
-    init_process_group(backend='nccl')
+        os.environ['MASTER_PORT'] = "39831"
+    init_process_group(backend='nccl')'''
     print("Number of GPU's: {DDPWorldSize}")
     device = f'cuda:{DDPLocalRank}'
     torch.cuda.set_device(device)
