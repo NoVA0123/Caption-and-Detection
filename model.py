@@ -2,6 +2,7 @@ import torch
 import time
 import os
 import pandas as pd
+from torch.autograd import backward
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 import json
@@ -21,61 +22,17 @@ from base_files.dataset_files.json_extracter import caption_extracter
 from base_files.dataset_files.image_extracter import imgextracter
 
 
-# Configurig device
-print('Loading the device: \n\n')
 
-# Checking if multiple GPU's are available or not.
-DistDataParallel = torch.cuda.device_count() >= 2
+def setup(rank:int,
+          world_size:int):
 
-if DistDataParallel:
-    '''
-    We need to set device appropriately according to the rank as Distributed
-    Data Parallel uses CUDA(GPU) for distributing load on different GPU.
-    '''
-    assert torch.cuda.is_available(), "We dont multiple gpus for DDP"
+    os.environ["MASTER_ADDR"] = 'localhost'
+    os.environ['MASTER_PORT'] = '5674'
 
-    print("We are using Multiple GPU's. \n\n")
+    init_process_group(backend='nccl',
+                       rank=rank,
+                       world_size=world_size)
 
-    init_process_group(backend='nccl')
-    DDPRank = dist.get_rank()
-    DDPWorldSize = torch.cuda.device_count() # Number of GPU's
-
-    # Adding ports
-    '''
-    sock = socket.socket()
-    sock.bind(("", 0))
-    name = str(sock.getsockname()[1])
-    os.environ["MASTER_PORT"] = "39830"
-    print('counted gpus')
-    if DDPRank != 0:
-        os.environ['MASTER_PORT'] = "39831"'''
-
-    print(f"Number of GPU's: {DDPWorldSize}")
-    device = DDPRank
-    torch.cuda.set_device(device)
-    master_process = DDPRank == 0
-
-else:
-    # Vanilla, non-DDP runs
-    DDPRank = 0
-    DDPLocalRank = 0
-    DDPWorldSize = 0
-    master_process = True
-
-    # Attempt to autodetect device
-    print('Autodetecting the Device... \n\n')
-    device = 'cpu'
-
-    # Use GPU if it is available
-    if torch.cuda.is_available():
-        device = 'cuda'
-
-    # Use MPS if it is available(Apple devices only)
-    elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
-        device = 'mps'
-
-print('Device has been loaded!\n\n')
-print(f"Current Device: {device}")
 
 # Setting seed for reproducability
 torch.manual_seed(1337)
@@ -104,7 +61,7 @@ def get_decay_lr(it:int,
     return MinLr + Coeff * (MaxLr - MinLr)
 
 
-# Function for distributed data
+# Function for distributed data for parallel processing
 def parallel_data_sampler(rank,
                           WorldSize,
                           dataset,
@@ -122,8 +79,39 @@ def parallel_data_sampler(rank,
 
     return dataloader
 
+
 # Training the dataset
-def train(JsonPath:str):
+def train(rank:int,
+          world_size:int,
+          JsonPath:str,
+          ):
+    
+    # Check for multiple GPU's
+    if world_size > 1:
+        setup(rank=rank,# Current GPU id
+              world_size=world_size) # Total number of GPU's
+        device = rank
+        device_type = 'cuda'
+        DistDataParallel = True
+
+    else:
+        device = 'cpu'
+
+        # Use GPU if it is available
+        if torch.cuda.is_available():
+            device = 'cuda'
+
+        # Use MPS if it is available(Apple devices only)
+        elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+            device = 'mps'
+        
+        device_type = device
+        DistDataParallel = False
+
+    # Ignore warnings
+    warnings.filterwarnings('ignore')
+
+    # Setting null to None(for Json)
     null = None
     
     # Loading json
@@ -190,18 +178,27 @@ def train(JsonPath:str):
                           MaxSeqLen=MaxLen,
                           dataframe=TrainData)
 
-    CaptionData = parallel_data_sampler(rank=DDPRank,
-                                        WorldSize=DDPWorldSize,
-                                        dataset=CaptionDataClass,
-                                        batch_size=BatchSize)
+    if DistDataParallel:
+        CaptionData = parallel_data_sampler(rank=rank,
+                                            WorldSize=world_size,
+                                            dataset=CaptionDataClass,
+                                            batch_size=BatchSize)
+    else:
+        CaptionData = DataLoader(CaptionDataClass,
+                                 batch_size=BatchSize)
 
     # Loading Image data into dataloader
     ImgDataClass = imgextracter(dataframe=TrainData)
 
-    ImgData = parallel_data_sampler(rank=DDPRank,
-                                    WorldSize=DDPWorldSize,
+    if DistDataParallel:
+        ImgData = parallel_data_sampler(rank=rank,
+                                    WorldSize=world_size,
                                     dataset=ImgDataClass,
                                     batch_size=BatchSize)
+
+    else:
+        ImgData = DataLoader(ImgDataClass,
+                             batch_size=BatchSize)
 
     # Initializing the transformer model
     model = transformer(config=config,
@@ -219,7 +216,7 @@ def train(JsonPath:str):
         gradients of every GPU.
         '''
         model = DDP(model,
-                    device_ids=[DDPRank])
+                    device_ids=[device])
 
     # We need to create raw model for our configure optimizer to work properly
     raw_model = model.module if DistDataParallel else model
@@ -237,13 +234,13 @@ def train(JsonPath:str):
                                   eps=1e-8)'''
     optimizer = raw_model.configure_optimizers(WeightDecay=0.1,
                                            LearningRate=6e-4,
-                                           device=device)
+                                           device=device_type)
 
     # Creating gradient accumulation step to increase batch size
     TotalBatchSize = 2**19
-    assert TotalBatchSize % (BatchSize * MaxLen * DDPWorldSize) == 0, "Make sure the total batch size is divisible by Batch * SeqLen"
-    GradAccumSteps = TotalBatchSize // (BatchSize * MaxLen * DDPWorldSize)
-    if master_process: # This will prevent displaying text multiple times
+    assert TotalBatchSize % (BatchSize * MaxLen * world_size) == 0, "Make sure the total batch size is divisible by Batch * SeqLen"
+    GradAccumSteps = TotalBatchSize // (BatchSize * MaxLen * world_size)
+    if rank == 0: # This will prevent displaying text multiple times
         print(f"Total batch size is: {TotalBatchSize} ")
         print(f"-> calculated gradient accumulation steps: {GradAccumSteps}")
 
@@ -280,7 +277,7 @@ def train(JsonPath:str):
                 faster than normal float32. It reduces the decimal value.
                 '''
                 if torch.cuda.is_bf16_supported():
-                    with torch.autocast(device_type=device,
+                    with torch.autocast(device_type=device_type,
                                         dtype=torch.bfloat16):
                         _, loss = model(DecoderInput, img, Label)
                 else:
@@ -314,7 +311,7 @@ def train(JsonPath:str):
                 the model.
                 '''
                 if DistDataParallel:
-                    model.require_backward_grad_sync = (MicroStep == GradAccumSteps - 1)
+                    model.require_backward_grad_sync = (MicroSteps == GradAccumSteps - 1)
                 loss.backward()
             
             # Reduce gradients alltogther
@@ -338,25 +335,25 @@ def train(JsonPath:str):
             # Storing output time
             t1 = time.time()
             dt = t1 - t0 
-            TokensProcessed = BatchSize * MaxLen * GradAccumSteps * DDPWorldSize
+            TokensProcessed = BatchSize * MaxLen * GradAccumSteps * world_size
             TokensPerSec = TokensProcessed / dt
 
             GlobalSteps += 1
             LocalSteps += 1
-            if master_process:
+            if rank == 0:
                 print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} | norm: {norm: .2f} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
 
-# Destroy all parallel process
-if DistDataParallel:
-    destroy_process_group()
-'''
+    # Destroy all parallel process
+    if DistDataParallel:
+        destroy_process_group()
+
     ModelName = 'caption_model.pt'
     torch.save({
         'epoch': Epochs,
-        'model_state_dict': model.state_dict(),
+        'model_state_dict': model.module.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         'global_step': GlobalSteps,
-        }, ModelName)'''
+        }, ModelName)
 
 # Argument parser
 def command_line_argument():
@@ -366,6 +363,17 @@ def command_line_argument():
 
 
 # Running the model
-warnings.filterwarnings('ignore')
-JsonPath = command_line_argument()
-train(JsonPath.Path)
+if __name__ == "__main__":
+    JsonPath = command_line_argument()
+    world_size = torch.cuda.device_count()
+    if world_size > 1:
+        mp.spawn(train,
+                 args=(world_size, JsonPath.Path),
+                 nprocs=world_size)
+
+    else:
+        rank = 0
+        world_size = 1
+        train(rank,
+              world_size,
+              JsonPath.Path)
