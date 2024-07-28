@@ -39,7 +39,6 @@ if DistDataParallel:
     init_process_group(backend='nccl')
     DDPRank = dist.get_rank()
     DDPWorldSize = torch.cuda.device_count() # Number of GPU's
-    DDPLocalRank = list(range(DDPWorldSize)) # Ordering the GPU's
 
     # Adding ports
     '''
@@ -52,7 +51,7 @@ if DistDataParallel:
         os.environ['MASTER_PORT'] = "39831"'''
 
     print(f"Number of GPU's: {DDPWorldSize}")
-    device = f'cuda:{DDPLocalRank}'
+    device = f'cuda:{DDPRank}'
     torch.cuda.set_device(device)
     master_process = DDPRank == 0
 
@@ -220,7 +219,7 @@ def train(JsonPath:str):
         gradients of every GPU.
         '''
         model = DDP(model,
-                    device_ids=DDPLocalRank)
+                    device_ids=[DDPRank])
 
     # We need to create raw model for our configure optimizer to work properly
     raw_model = model.module if DistDataParallel else model
