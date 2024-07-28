@@ -51,7 +51,7 @@ if DistDataParallel:
         os.environ['MASTER_PORT'] = "39831"'''
 
     print(f"Number of GPU's: {DDPWorldSize}")
-    device = f'cuda:{DDPRank}'
+    device = DDPRank
     torch.cuda.set_device(device)
     master_process = DDPRank == 0
 
