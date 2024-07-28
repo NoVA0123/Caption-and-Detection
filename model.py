@@ -30,6 +30,7 @@ name = str(sock.getsockname()[1])
 os.environ["MASTER_ADDR"] = "localhost"
 os.environ["MASTER_PORT"] = name
 '''
+os.environ["MASTER_PORT"] = '12345'
 # Configurig device
 print('Loading the device: \n\n')
 
