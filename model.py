@@ -367,6 +367,9 @@ def command_line_argument():
 
 
 # Running the model
+os.environ['MASTER_ADDR'] = 'localhost'
+os.environ['MASTER_PORT'] = '46597'
+init_process_group(backend='nccl')
 warnings.filterwarnings('ignore')
 JsonPath = command_line_argument()
 mp.spawn(train,
