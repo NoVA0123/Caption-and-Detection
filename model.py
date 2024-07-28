@@ -22,6 +22,68 @@ from base_files.dataset_files.json_extracter import caption_extracter
 from base_files.dataset_files.image_extracter import imgextracter
 
 
+# Configurig device
+print('Loading the device: \n\n')
+
+# Checking if multiple GPU's are available or not.
+DistDataParallel = int(os.environ.get('RANK', -1)) != -1
+
+if DistDataParallel:
+    '''
+    We need to set device appropriately according to the rank as Distributed
+    Data Parallel uses CUDA(GPU) for distributing load on different GPU.
+    '''
+    assert torch.cuda.is_available(), "We dont multiple gpus for DDP"
+
+    print("We are using Multiple GPU's. \n\n")
+
+    DDPRank = int(os.environ['RANK']) 
+    DDPLocalRank = int(os.environ['LOCAL_RANK']) # Ordering the GPU's
+    DDPWorldSize = int(os.environ['WORLD_SIZE']) # Number of GPU's
+
+    # Adding ports
+    '''
+    sock = socket.socket()
+    sock.bind(("", 0))
+    name = str(sock.getsockname()[1])'''
+    os.environ["MASTER_PORT"] = "39830"
+    print('counted gpus')
+    if DDPRank != 0:
+        os.environ['MASTER_PORT'] = "39831"
+    init_process_group(backend='nccl')
+    print("Number of GPU's: {DDPWorldSize}")
+    device = f'cuda:{DDPLocalRank}'
+    torch.cuda.set_device(device)
+    master_process = DDPRank == 0
+
+else:
+    # Vanilla, non-DDP runs
+    DDPRank = 0
+    DDPLocalRank = 0
+    DDPWorldSize = 0
+    master_process = True
+
+    # Attempt to autodetect device
+    print('Autodetecting the Device... \n\n')
+    device = 'cpu'
+
+    # Use GPU if it is available
+    if torch.cuda.is_available():
+        device = 'cuda'
+
+    # Use MPS if it is available(Apple devices only)
+    elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        device = 'mps'
+
+print('Device has been loaded!\n\n')
+print(f"Current Device: {device}")
+
+# Setting seed for reproducability
+torch.manual_seed(1337)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed(1337)
+
+
 # Creating a function to reduce learning rate using decay method
 def get_decay_lr(it:int,
                  WarmupSteps:int,
@@ -304,68 +366,6 @@ def command_line_argument():
     return parser.parse_args()
 
 if __name__ == '__main__':
-
-    # Configurig device
-    print('Loading the device: \n\n')
-
-    # Checking if multiple GPU's are available or not.
-    DistDataParallel = int(os.environ.get('RANK', -1)) != -1
-
-    if DistDataParallel:
-        '''
-        We need to set device appropriately according to the rank as Distributed
-        Data Parallel uses CUDA(GPU) for distributing load on different GPU.
-        '''
-        assert torch.cuda.is_available(), "We dont multiple gpus for DDP"
-
-        print("We are using Multiple GPU's. \n\n")
-
-        DDPRank = int(os.environ['RANK']) 
-        DDPLocalRank = int(os.environ['LOCAL_RANK']) # Ordering the GPU's
-        DDPWorldSize = int(os.environ['WORLD_SIZE']) # Number of GPU's
-
-        # Adding ports
-        '''
-        sock = socket.socket()
-        sock.bind(("", 0))
-        name = str(sock.getsockname()[1])
-        os.environ["MASTER_PORT"] = "39830"
-        print('counted gpus')
-        if DDPRank != 0:
-            os.environ['MASTER_PORT'] = "39831"'''
-        init_process_group(backend='nccl')
-        print("Number of GPU's: {DDPWorldSize}")
-        device = f'cuda:{DDPLocalRank}'
-        torch.cuda.set_device(device)
-        master_process = DDPRank == 0
-
-    else:
-        # Vanilla, non-DDP runs
-        DDPRank = 0
-        DDPLocalRank = 0
-        DDPWorldSize = 0
-        master_process = True
-
-        # Attempt to autodetect device
-        print('Autodetecting the Device... \n\n')
-        device = 'cpu'
-
-        # Use GPU if it is available
-        if torch.cuda.is_available():
-            device = 'cuda'
-
-        # Use MPS if it is available(Apple devices only)
-        elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
-            device = 'mps'
-
-        print('Device has been loaded!\n\n')
-        print(f"Current Device: {device}")
-
-    # Setting seed for reproducability
-    torch.manual_seed(1337)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed(1337)
-
     warnings.filterwarnings('ignore')
     JsonPath = command_line_argument()
     mp.spawn(train,
