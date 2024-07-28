@@ -173,18 +173,27 @@ def train(rank:int,
                           MaxSeqLen=MaxLen,
                           dataframe=TrainData)
 
-    CaptionData = parallel_data_sampler(rank=DDPRank,
-                                        WorldSize=DDPWorldSize,
-                                        dataset=CaptionDataClass,
-                                        batch_size=BatchSize)
+    if DistDataParallel:
+        CaptionData = parallel_data_sampler(rank=rank,
+                                            WorldSize=world_size,
+                                            dataset=CaptionDataClass,
+                                            batch_size=BatchSize)
+    else:
+        CaptionData = DataLoader(CaptionDataClass,
+                                 batch_size=BatchSize)
 
     # Loading Image data into dataloader
     ImgDataClass = imgextracter(dataframe=TrainData)
 
-    ImgData = parallel_data_sampler(rank=DDPRank,
-                                    WorldSize=DDPWorldSize,
+    if DistDataParallel:
+        ImgData = parallel_data_sampler(rank=rank,
+                                    WorldSize=world_size,
                                     dataset=ImgDataClass,
                                     batch_size=BatchSize)
+
+    else:
+        ImgData = DataLoader(ImgDataClass,
+                             batch_size=BatchSize)
 
     # Initializing the transformer model
     model = transformer(config=config,
