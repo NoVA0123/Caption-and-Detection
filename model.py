@@ -23,11 +23,13 @@ from base_files.dataset_files.image_extracter import imgextracter
 
 
 # Adding ports
+'''
 sock = socket.socket()
 sock.bind(("", 0))
 name = str(sock.getsockname()[1])
 os.environ["MASTER_ADDR"] = "localhost"
 os.environ["MASTER_PORT"] = name
+'''
 # Configurig device
 print('Loading the device: \n\n')
 
@@ -45,6 +47,7 @@ if DistDataParallel:
     DDPLocalRank = int(os.environ['LOCAL_RANK']) # Ordering the GPU's
     DDPWorldSize = int(os.environ['WORLD_SIZE']) # Number of GPU's
     init_process_group(backend='nccl',
+                       init_method="env://",
                        rank=DDPRank,
                        world_size=DDPWorldSize)
     print("Number of GPU's: {DDPWorldSize}")
