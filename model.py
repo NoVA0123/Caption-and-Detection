@@ -37,6 +37,7 @@ if DistDataParallel:
 
     print("We are using Multiple GPU's. \n\n")
 
+    init_process_group(backend='nccl')
     DDPRank = int(os.environ['RANK']) 
     DDPLocalRank = int(os.environ['LOCAL_RANK']) # Ordering the GPU's
     DDPWorldSize = int(os.environ['WORLD_SIZE']) # Number of GPU's
@@ -51,7 +52,6 @@ if DistDataParallel:
     if DDPRank != 0:
         os.environ['MASTER_PORT'] = "39831"'''
 
-    init_process_group(backend='nccl')
     print(f"Number of GPU's: {DDPWorldSize}")
     device = f'cuda:{DDPLocalRank}'
     torch.cuda.set_device(device)
