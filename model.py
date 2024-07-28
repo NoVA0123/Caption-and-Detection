@@ -49,9 +49,10 @@ if DistDataParallel:
     os.environ["MASTER_PORT"] = "39830"
     print('counted gpus')
     if DDPRank != 0:
-        os.environ['MASTER_PORT'] = "39831"
-    init_process_group(backend='nccl')'''
-    print("Number of GPU's: {DDPWorldSize}")
+        os.environ['MASTER_PORT'] = "39831"'''
+
+    init_process_group(backend='nccl')
+    print(f"Number of GPU's: {DDPWorldSize}")
     device = f'cuda:{DDPLocalRank}'
     torch.cuda.set_device(device)
     master_process = DDPRank == 0
@@ -367,11 +368,6 @@ def command_line_argument():
 
 
 # Running the model
-os.environ['MASTER_ADDR'] = 'localhost'
-os.environ['MASTER_PORT'] = '46597'
-init_process_group(backend='nccl')
 warnings.filterwarnings('ignore')
 JsonPath = command_line_argument()
-mp.spawn(train,
-         args=(JsonPath.Path),
-         nprocs=DDPWorldSize)
+train(JsonPath.Path)
