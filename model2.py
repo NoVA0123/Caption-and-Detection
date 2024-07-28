@@ -233,9 +233,9 @@ def train(rank:int,
 
     # Creating gradient accumulation step to increase batch size
     TotalBatchSize = 2**19
-    assert TotalBatchSize % (BatchSize * MaxLen * DDPWorldSize) == 0, "Make sure the total batch size is divisible by Batch * SeqLen"
-    GradAccumSteps = TotalBatchSize // (BatchSize * MaxLen * DDPWorldSize)
-    if master_process: # This will prevent displaying text multiple times
+    assert TotalBatchSize % (BatchSize * MaxLen * world_size) == 0, "Make sure the total batch size is divisible by Batch * SeqLen"
+    GradAccumSteps = TotalBatchSize // (BatchSize * MaxLen * world_size)
+    if rank == 0: # This will prevent displaying text multiple times
         print(f"Total batch size is: {TotalBatchSize} ")
         print(f"-> calculated gradient accumulation steps: {GradAccumSteps}")
 
@@ -330,12 +330,12 @@ def train(rank:int,
             # Storing output time
             t1 = time.time()
             dt = t1 - t0 
-            TokensProcessed = BatchSize * MaxLen * GradAccumSteps * DDPWorldSize
+            TokensProcessed = BatchSize * MaxLen * GradAccumSteps * world_size
             TokensPerSec = TokensProcessed / dt
 
             GlobalSteps += 1
             LocalSteps += 1
-            if master_process:
+            if rank == 0:
                 print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} | norm: {norm: .2f} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
 
     # Destroy all parallel process
