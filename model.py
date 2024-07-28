@@ -45,6 +45,7 @@ if DistDataParallel:
     DDPRank = int(os.environ['RANK']) 
     DDPLocalRank = int(os.environ['LOCAL_RANK']) # Ordering the GPU's
     DDPWorldSize = int(os.environ['WORLD_SIZE']) # Number of GPU's
+    print('counted gpus')
     init_process_group(backend='nccl',
                        init_method="env://",
                        rank=DDPRank,
