@@ -22,13 +22,6 @@ from base_files.dataset_files.json_extracter import caption_extracter
 from base_files.dataset_files.image_extracter import imgextracter
 
 
-# Adding ports
-
-sock = socket.socket()
-sock.bind(("", 0))
-name = str(sock.getsockname()[1])
-os.environ["MASTER_PORT"] = name
-
 # Configurig device
 print('Loading the device: \n\n')
 
@@ -41,15 +34,20 @@ if DistDataParallel:
     Data Parallel uses CUDA(GPU) for distributing load on different GPU.
     '''
     assert torch.cuda.is_available(), "We dont multiple gpus for DDP"
+
     print("We are using Multiple GPU's. \n\n")
+
     DDPRank = int(os.environ['RANK']) 
     DDPLocalRank = int(os.environ['LOCAL_RANK']) # Ordering the GPU's
     DDPWorldSize = int(os.environ['WORLD_SIZE']) # Number of GPU's
+
+    # Adding ports
+    sock = socket.socket()
+    sock.bind(("", 0))
+    name = str(sock.getsockname()[1])
+    os.environ["MASTER_PORT"] = name
     print('counted gpus')
-    init_process_group(backend='nccl',
-                       init_method="env://",
-                       rank=DDPRank,
-                       world_size=DDPWorldSize)
+    init_process_group(backend='nccl')
     print("Number of GPU's: {DDPWorldSize}")
     device = f'cuda:{DDPLocalRank}'
     torch.cuda.set_device(device)
