@@ -36,7 +36,6 @@ if DistDataParallel:
 
     print("We are using Multiple GPU's. \n\n")
 
-    init_process_group(backend='nccl')
     DDPRank = dist.get_rank()
     DDPWorldSize = torch.cuda.device_count() # Number of GPU's
     init_process_group(backend='nccl',
