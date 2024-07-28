@@ -22,15 +22,6 @@ from base_files.dataset_files.json_extracter import caption_extracter
 from base_files.dataset_files.image_extracter import imgextracter
 
 
-# Adding ports
-'''
-sock = socket.socket()
-sock.bind(("", 0))
-name = str(sock.getsockname()[1])
-os.environ["MASTER_ADDR"] = "localhost"
-os.environ["MASTER_PORT"] = name
-'''
-os.environ["MASTER_PORT"] = '12345'
 # Configurig device
 print('Loading the device: \n\n')
 
@@ -78,6 +69,13 @@ else:
 print('Device has been loaded!\n\n')
 print(f"Current Device: {device}")
 
+# Adding ports
+
+sock = socket.socket()
+sock.bind(("", 0))
+name = str(sock.getsockname()[1])
+os.environ["MASTER_ADDR"] = "localhost"
+os.environ["MASTER_PORT"] = name
 
 # Setting seed for reproducability
 torch.manual_seed(1337)
