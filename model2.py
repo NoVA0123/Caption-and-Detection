@@ -34,62 +34,6 @@ def setup(rank:int,
                        world_size=world_size)
 
 
-# Configurig device
-print('Loading the device: \n\n')
-
-# Checking if multiple GPU's are available or not.
-DistDataParallel = torch.cuda.device_count() >= 2
-
-if DistDataParallel:
-    '''
-    We need to set device appropriately according to the rank as Distributed
-    Data Parallel uses CUDA(GPU) for distributing load on different GPU.
-    '''
-    assert torch.cuda.is_available(), "We dont multiple gpus for DDP"
-
-    print("We are using Multiple GPU's. \n\n")
-
-    init_process_group(backend='nccl')
-    DDPRank = dist.get_rank()
-    DDPWorldSize = torch.cuda.device_count() # Number of GPU's
-
-    # Adding ports
-    '''
-    sock = socket.socket()
-    sock.bind(("", 0))
-    name = str(sock.getsockname()[1])
-    os.environ["MASTER_PORT"] = "39830"
-    print('counted gpus')
-    if DDPRank != 0:
-        os.environ['MASTER_PORT'] = "39831"'''
-
-    print(f"Number of GPU's: {DDPWorldSize}")
-    device = DDPRank
-    torch.cuda.set_device(device)
-    master_process = DDPRank == 0
-
-else:
-    # Vanilla, non-DDP runs
-    DDPRank = 0
-    DDPLocalRank = 0
-    DDPWorldSize = 0
-    master_process = True
-
-    # Attempt to autodetect device
-    print('Autodetecting the Device... \n\n')
-    device = 'cpu'
-
-    # Use GPU if it is available
-    if torch.cuda.is_available():
-        device = 'cuda'
-
-    # Use MPS if it is available(Apple devices only)
-    elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
-        device = 'mps'
-
-print('Device has been loaded!\n\n')
-print(f"Current Device: {device}")
-
 # Setting seed for reproducability
 torch.manual_seed(1337)
 if torch.cuda.is_available():
@@ -140,10 +84,11 @@ def train(rank:int,
           world_size:int,
           JsonPath:str,
           ):
-
+    
+    # Check for multiple GPU's
     if world_size > 1:
-        setup(rank=rank,
-              world_size=world_size)
+        setup(rank=rank,# Current GPU id
+              world_size=world_size) # Total number of GPU's
         device = rank
         device_type = 'cuda'
         DistDataParallel = True
