@@ -91,7 +91,7 @@ class transformer(nn.Module):
                                       lr=LearningRate,
                                       betas=(0.9, 0.95),
                                       eps=1e-8,
-                                      fused=FusedAvailable)
+                                      fused=UseFused)
         return Optimizer
 
     def forward(self, Input, Img, Target=None):
