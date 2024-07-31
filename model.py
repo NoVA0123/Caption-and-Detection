@@ -126,7 +126,7 @@ def train(rank:int,
     TrainData = caption_extracter(TrainJson, TrainImgPath)
 
     # Creating a tokenizer
-    if data['tokenizer_config']['tokenizer_path'] is null:
+    if data['tokenizer_config']['tokenizer_save_path'] is null:
         tokenizer = get_tokenizer(TrainData)
     else:
         tokenizer = get_tokenizer(TrainData,

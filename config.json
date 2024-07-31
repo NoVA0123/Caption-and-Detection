@@ -14,7 +14,8 @@
         "specific_download_path": null
     },
     "tokenizer_config":{
-        "tokenizer_path": null
+        "tokenizer_save_path": null,
+        "tokeizer_load_path": "/kaggle/working/Caption-and-Detection/tokenizer.json"
     },
     "transformer_config":{
         "block_size": 64,
@@ -34,5 +35,6 @@
     },
     "dataset_config": {
         "max_sample": 131072
-    }
+    },
+    "saved_model_path":"/kaggle/input/captionm-1/pytorch/default/1"
 }
