@@ -343,17 +343,29 @@ def train(rank:int,
             if rank == 0:
                 print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} | norm: {norm: .2f} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
 
+    if DistDataParallel and rank == 0:
+
+        ModelName = 'caption_model.pt'
+        torch.save({
+            'epoch': Epochs,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'global_step': GlobalSteps,
+            }, ModelName)
+
+    else:
+        ModelName = 'caption_model.pt'
+        torch.save({
+            'epoch': Epochs,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'global_step': GlobalSteps,
+            }, ModelName)
+
+
     # Destroy all parallel process
     if DistDataParallel:
         destroy_process_group()
-
-    ModelName = 'caption_model.pt'
-    torch.save({
-        'epoch': Epochs,
-        'model_state_dict': model.module.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict(),
-        'global_step': GlobalSteps,
-        }, ModelName)
 
 # Argument parser
 def command_line_argument():
