@@ -11,6 +11,8 @@ from torch.distributed import init_process_group, destroy_process_group
 import torch.distributed as dist
 import torch.multiprocessing as mp
 import torch.nn.functional as F
+from torchvision.transforms import v2
+from torchvision.io import read_image
 from base_files.transformer_files.dataclass import transformerconfig
 from base_files.transformer_files.transformer import transformer
 from base_files.cnn_model_files.cnn_model import get_cnn_model
@@ -19,14 +21,9 @@ from base_files.dataset_files.json_extracter import caption_extracter
 from base_files.dataset_files.image_extracter import imgextracter
 
 
-# Setting the seed
-torch.manual_seed(1337)
-if torch.cuda.is_available():
-    torch.cuda.manual_seed(1337)
-
-
 @torch.no_grad()
-def validation(JsonPath:str):
+def translate(JsonPath:str,
+              ImgPath: str):
 
     device = 'cpu'
 
@@ -42,27 +39,29 @@ def validation(JsonPath:str):
     # Filtering the warnings
     warnings.filterwarnings('ignore')
 
+
     null = None
 
-
-    # Importing the file
+    # Importing json file
     with open (JsonPath, 'r') as f:
         data = json.load(f)
 
-    FilePath = data['file_path']
-    ValJson = FilePath['json_path']['validation_json']
-    ValImgPath = FilePath['image_path']['validation_path']
-    
-    # Extracting caption and storing corresponding image path
-    ValData = caption_extracter(ValJson, ValImgPath)
-
-    # Loading the tokenizer
+    # Importing tokenizer
     TokenizerPath = data["tokenizer_config"]['tokenizer_load_path']
     tokenizer = Tokenizer.from_file(TokenizerPath)
     
 
+    # Creating a transform image object
+    transform = v2.Compose([
+        v2.ToDtype(torch.float, scale=True), # Scale the image
+        v2.Resize(size=[224, 224]), # Resisze for the model
+        v2.Normalize(mean=[0, 0, 0], std=[1, 1, 1]), # Normalize values
+        v2.ToDtype(torch.float) # change it back to float
+        ])
 
-    '''Initializing Config parameters'''
+    # Reading the image and transforming the image
+    img = transform(read_image(ImgPath))
+
 
     # Initializing transformer config 
     TrConf = data['transformer_config']
@@ -95,19 +94,6 @@ def validation(JsonPath:str):
         effnetv2s = get_cnn_model(MaxSeqLen=MaxLen,
                                   DModel=DModel)
 
-    # Loading caption data into dataloader
-    CaptionDataClass = texttoid(tokenizer=tokenizer,
-                          MaxSeqLen=MaxLen,
-                          dataframe=ValData)
-
-    CaptionData = DataLoader(CaptionDataClass,
-                             batch_size=BatchSize)
-
-    # Loading Image data into dataloader
-    ImgDataClass = imgextracter(dataframe=ValData)
-
-    ImgData = DataLoader(ImgDataClass,
-                         batch_size=BatchSize)
 
     # Initializing the transformer model
     model = transformer(config=config,
@@ -118,26 +104,47 @@ def validation(JsonPath:str):
     model.load_state_dict(checkpoint['model_state_dict'])
     model.to(device)
 
-    # Setting up for validation
 
-    NumCorrectNorm = 0
-    NumCorrect = 0
-    NumTotal = 0
+    '''Creating caption for Image'''
+    model.eval()
+    SosToken = torch.tensor([tokenizer.token_to_id('[SOS]')],
+                            dtype=torch.long)
+    tokens = SosToken.unsqueeze(0)
+    XGen = tokens.to(device) # Sequence Length, DModel
+    SampleRng = torch.Generator(device=device)
+    SampleRng.manual_seed(42)
+    while XGen.size(0) < MaxLen:
 
-    # Validation begins here
-    for img, caption in zip(ImgData, CaptionData):
+        # forwarding the model
+        with torch.no_grad():
+            logits, _ = model(img, XGen)
+            # Take the logits at last position
+            logits = logits[-1, :]
+            # Get the probablities
+            probs = F.softmax(logits, dim=-1)
+            # TopK sampling
+            TopkProbs, TopkIndices = torch.topk(probs, 50, dim=-1)
+            # Select a token from topk
+            Index = torch.multinomial(TopkProbs, 1, generator=SampleRng)
+            # Gather the indices
+            xcol = torch.gather(TopkIndices, -1, Index)
+            # Append the sequence
+            XGen = torch.cat((XGen, xcol), dim=0)
 
-        DecoderInput = caption['decoder_input'].to(device)
-        Label = caption['label'].to(device)
-        img = img.to(device)
+    # Print the text which has been generated
+    tokens = XGen.tolist()
+    decoded = tokenizer.decode(XGen)
+    return decoded
 
-        # get logits
-        logits, loss = model(DecoderInput, img)
-        ShiftLogits = (logits[:, :-1, :]).contiguous()
-        ShiftInput = (DecoderInput[:, :-1, :]).contiguous()
-        FlatShiftLogits = ShiftLogits.view(-1, ShiftLogits.size(-1))
-        FlatShiftInput = ShiftInput.view(-1)
-        ShiftLosses = F.cross_entropy(FlatShiftLogits,
-                                      FlatShiftInput,
-                                      reduction='none')
-        ShiftLosses = ShiftLosses.view(DecoderInput.size(0), -1)
+
+# Argument parser
+def command_line_argument():
+    parser = ArgumentParser()
+    parser.add_argument('--path', dest='Path', action='append')
+    return parser.parse_args()
+
+if __name__ == '__main__':
+    Paths = command_line_argument()
+    Paths = Paths.Path
+    decoded = translate(*Paths)
+    print(decoded)
