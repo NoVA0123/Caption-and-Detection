@@ -107,11 +107,11 @@ def CaptionGenerator(JsonPath:str,
     XGen = tokens.to(device) # Sequence Length, DModel
     SampleRng = torch.Generator(device=device)
     SampleRng.manual_seed(42)
-    while XGen.size(0) < MaxLen:
+    while XGen.size(1) < MaxLen:
 
         # forwarding the model
         with torch.no_grad():
-            logits, _ = model(img, XGen)
+            logits, _ = model(XGen, img)
             # Take the logits at last position
             logits = logits[:, -1, :]
             # Get the probablities
