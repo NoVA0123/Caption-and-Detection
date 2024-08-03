@@ -100,9 +100,10 @@ def CaptionGenerator(JsonPath:str,
 
     '''Creating caption for Image'''
     model.eval()
+    NumReturnSequences = 4
     SosToken = torch.tensor([tokenizer.token_to_id('[SOS]')],
                             dtype=torch.long)
-    tokens = SosToken.unsqueeze(0)
+    tokens = SosToken.unsqueeze(0).repeat(NumReturnSequences, 1)
     XGen = tokens.to(device) # Sequence Length, DModel
     SampleRng = torch.Generator(device=device)
     SampleRng.manual_seed(42)
@@ -112,7 +113,7 @@ def CaptionGenerator(JsonPath:str,
         with torch.no_grad():
             logits, _ = model(img, XGen)
             # Take the logits at last position
-            logits = logits[-1, :]
+            logits = logits[:, -1, :]
             # Get the probablities
             probs = F.softmax(logits, dim=-1)
             # TopK sampling
@@ -122,12 +123,18 @@ def CaptionGenerator(JsonPath:str,
             # Gather the indices
             xcol = torch.gather(TopkIndices, -1, Index)
             # Append the sequence
-            XGen = torch.cat((XGen, xcol), dim=0)
+            XGen = torch.cat((XGen, xcol), dim=1)
 
     # Print the text which has been generated
-    tokens = XGen.tolist()
-    decoded = tokenizer.decode(XGen)
-    return decoded
+    DecodedValues = []
+    for i in range(NumReturnSequences):
+
+        tokens = XGen[i, :MaxLen].tolist()
+        decoded = tokenizer.decode(XGen)
+        print(decoded)
+        DecodedValues.append(decoded)
+
+    return DecodedValues
 
 
 # Argument parser
@@ -140,4 +147,3 @@ if __name__ == '__main__':
     Paths = command_line_argument()
     Paths = Paths.Path
     decoded = CaptionGenerator(*Paths)
-    print(decoded)
