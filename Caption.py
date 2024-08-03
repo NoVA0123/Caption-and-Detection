@@ -22,8 +22,8 @@ from base_files.dataset_files.image_extracter import imgextracter
 
 
 @torch.no_grad()
-def translate(JsonPath:str,
-              ImgPath: str):
+def CaptionGenerator(JsonPath:str,
+                     ImgPath: str):
 
     device = 'cpu'
 
@@ -146,5 +146,5 @@ def command_line_argument():
 if __name__ == '__main__':
     Paths = command_line_argument()
     Paths = Paths.Path
-    decoded = translate(*Paths)
+    decoded = CaptionGenerator(*Paths)
     print(decoded)
