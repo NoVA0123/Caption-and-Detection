@@ -91,7 +91,10 @@ def CaptionGenerator(JsonPath:str,
 
     # Loading checkpoint
     checkpoint = torch.load(data["saved_model_path"])
-    model.load_state_dict(checkpoint['model_state_dict'])
+    state_dict = checkpoint['model_state_dict']
+    for key in list(state_dict.keys()):
+        state_dict[key.replace("module._orig_mod.", "")] = state_dict.pop(key)
+    model.load_state_dict(state_dict)
     model.to(device)
 
 
