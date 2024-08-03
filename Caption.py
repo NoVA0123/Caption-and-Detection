@@ -103,8 +103,9 @@ def CaptionGenerator(JsonPath:str,
     NumReturnSequences = 4
     SosToken = torch.tensor([tokenizer.token_to_id('[SOS]')],
                             dtype=torch.long)
-    tokens = SosToken.unsqueeze(0).repeat(NumReturnSequences, 1)
-    XGen = tokens.to(device) # Sequence Length, DModel
+    XGen = SosToken.unsqueeze(0).repeat(NumReturnSequences, 1)
+    XGen = XGen.to(device) # Sequence Length, DModel
+    img = img.to(device)
     SampleRng = torch.Generator(device=device)
     SampleRng.manual_seed(42)
     while XGen.size(1) < MaxLen:
