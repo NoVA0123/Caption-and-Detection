@@ -99,8 +99,8 @@ def CaptionGenerator(JsonPath:str,
     NumReturnSequences = 4
     SosToken = torch.tensor([tokenizer.token_to_id('[SOS]')],
                             dtype=torch.long)
-    XGen = SosToken.unsqueeze(0).repeat(NumReturnSequences, 1)
-    img = img.repeat(NumReturnSequences, 1, 1)
+    XGen = SosToken.unsqueeze(0)#.repeat(NumReturnSequences, 1)
+    img = img.unsqueeze(0)#.repeat(NumReturnSequences, 1, 1)
     XGen = XGen.to(device) # Sequence Length, DModel
     img = img.to(device)
     SampleRng = torch.Generator(device=device)
@@ -124,7 +124,7 @@ def CaptionGenerator(JsonPath:str,
             XGen = torch.cat((XGen, xcol), dim=1)
 
     # Print the text which has been generated
-    DecodedValues = []
+    '''DecodedValues = []
     for i in range(NumReturnSequences):
 
         tokens = XGen[i, :MaxLen].tolist()
@@ -132,7 +132,10 @@ def CaptionGenerator(JsonPath:str,
         print(decoded)
         DecodedValues.append(decoded)
 
-    return DecodedValues
+    return DecodedValues'''
+    tokens = XGen.tolist()
+    Decoded = tokenizer.decode(tokens)
+    return Decoded
 
 
 # Argument parser
@@ -145,3 +148,4 @@ if __name__ == '__main__':
     Paths = command_line_argument()
     Paths = Paths.Path
     decoded = CaptionGenerator(*Paths)
+    print(decoded)
