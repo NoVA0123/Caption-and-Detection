@@ -67,10 +67,6 @@ def CaptionGenerator(JsonPath:str,
                                nHead=NumHeads,
                                nEmbd=DModel)
 
-    # Initializing model hyper parameters
-    ModelConfig = data['model_config']
-    BatchSize = ModelConfig['batch_size']
-
     # Downloading the Cnn model
     CnnConf = data['cnn_model_config']
     ExistingPath = CnnConf['existing_path']
@@ -132,7 +128,7 @@ def CaptionGenerator(JsonPath:str,
     for i in range(NumReturnSequences):
 
         tokens = XGen[i, :MaxLen].tolist()
-        decoded = tokenizer.decode(XGen)
+        decoded = tokenizer.decode(tokens)
         print(decoded)
         DecodedValues.append(decoded)
 
