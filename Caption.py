@@ -122,7 +122,7 @@ def CaptionGenerator(JsonPath:str,
             probs = F.softmax(logits, dim=-1)
             # TopK sampling
             _, TopkIndices = torch.topk(probs, 1, dim=-1)
-            CurrentTok = TopkIndices[0, 0]
+            CurrentTok = int(TopkIndices[0, 0])
             CaptionTokens.append(CurrentTok)
             index = len(CaptionTokens)
             XGen[0, index-1] = CaptionTokens[-1]
@@ -138,7 +138,7 @@ def CaptionGenerator(JsonPath:str,
 
     return DecodedValues'''
     Decoded = tokenizer.decode(CaptionTokens)
-    print(Decoded)
+    print(f"Caption: {Decoded} \n {CaptionTokens}")
     return Decoded
 
 
