@@ -123,7 +123,7 @@ def CaptionGenerator(JsonPath:str,
             probs = F.softmax(logits, dim=-1)
             # TopK sampling
             TopkProbs, TopkIndices = torch.topk(probs, 50, dim=-1)
-            ix = torch.multinomial(TopkProbs, 2, generator=SampleRng) # (B, 1)
+            ix = torch.multinomial(TopkProbs, 1, generator=SampleRng) # (B, 1)
             print(TopkProbs.shape)
 
             # gather the corresponding indices
