@@ -138,6 +138,7 @@ def CaptionGenerator(JsonPath:str,
 
     return DecodedValues'''
     Decoded = tokenizer.decode(CaptionTokens)
+    print(decoded)
     return Decoded
 
 
@@ -151,4 +152,3 @@ if __name__ == '__main__':
     Paths = command_line_argument()
     Paths = Paths.Path
     decoded = CaptionGenerator(*Paths)
-    print(decoded)
