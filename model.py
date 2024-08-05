@@ -341,7 +341,11 @@ def train(rank:int,
                               MinLr=MinLr)
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
-            optimizer.step() # Applying a backpropogation step
+            if not UseScaler:
+                optimizer.step() # Applying a backpropogation step
+            else:
+                Scaler.step(optimizer)
+                Scaler.update()
             # Synchronizing GPU and CPU runtime
             torch.cuda.synchronize()
             # Storing output time
