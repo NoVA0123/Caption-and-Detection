@@ -352,8 +352,10 @@ def train(rank:int,
 
             GlobalSteps += 1
             LocalSteps += 1
-            if rank == 0:
-                print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} | norm: {norm: .2f} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
+            if rank == 0 and not UseScaler:
+                print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} |{norm: .2f} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
+            elif rank == 0 and UseScaler:
+                print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} |Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
 
     if DistDataParallel and rank == 0:
 
