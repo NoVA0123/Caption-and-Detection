@@ -110,25 +110,25 @@ def CaptionGenerator(JsonPath:str,
     img = img.to(device)
     SampleRng = torch.Generator(device=device)
     SampleRng.manual_seed(42)
-    while len(CaptionTokens) < MaxLen and CurrentTok != tokenizer.token_to_id('[EOS]'):
+    index = len(CaptionTokens)
+    while index < MaxLen and CurrentTok != tokenizer.token_to_id('[EOS]'):
 
 
         # forwarding the model
         with torch.no_grad():
             logits, _ = model(XGen, img)
             # Take the logits at last position
-            logits = logits[:, -1, :]
+            logits = logits[:, index-1, :]
             # Get the probablities
             probs = F.softmax(logits, dim=-1)
             # TopK sampling
             TopkProbs, TopkIndices = torch.topk(probs, 50, dim=-1)
             ix = torch.multinomial(TopkProbs, 2, generator=SampleRng) # (B, 1)
-            #ix = ix[1]
+            print(TopkProbs.shape)
 
             # gather the corresponding indices
 
             xcol = torch.gather(TopkIndices, -1, ix) # (B, 1)
-            print(TopkProbs)
             CurrentTok = int(xcol)
             CaptionTokens.append(CurrentTok)
             index = len(CaptionTokens)
