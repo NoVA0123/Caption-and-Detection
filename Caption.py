@@ -138,7 +138,7 @@ def CaptionGenerator(JsonPath:str,
 
     return DecodedValues'''
     Decoded = tokenizer.decode(CaptionTokens)
-    print(decoded)
+    print(Decoded)
     return Decoded
 
 
