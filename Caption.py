@@ -96,16 +96,23 @@ def CaptionGenerator(JsonPath:str,
 
     '''Creating caption for Image'''
     model.eval()
-    NumReturnSequences = 4
-    SosToken = torch.tensor([tokenizer.token_to_id('[SOS]')],
-                            dtype=torch.long)
-    XGen = SosToken.unsqueeze(0)#.repeat(NumReturnSequences, 1)
+    # NumReturnSequences = 4
+    CurrentTok = tokenizer.token_to_id('[SOS]')
+    CaptionTokens = [CurrentTok]
+
     img = img.unsqueeze(0)#.repeat(NumReturnSequences, 1, 1)
-    XGen = XGen.to(device) # Sequence Length, DModel
     img = img.to(device)
+    PaddingToken = [tokenizer.token_to_id('[PAD]')]
     SampleRng = torch.Generator(device=device)
     SampleRng.manual_seed(42)
-    while XGen.size(1) < MaxLen:
+    while len(CaptionTokens) < MaxLen and CurrentTok != tokenizer.token_to_id('[EOS]'):
+
+        NumPadTok = MaxLen - len(CaptionTokens)
+        XGen = torch.tensor(CaptionTokens, dtype=torch.long)
+        XGen = torch.cat([
+                    XGen,
+                    torch.tensor(PaddingToken * NumPadTok, dtype=torch.long)])
+        XGen = XGen.to(device)
 
         # forwarding the model
         with torch.no_grad():
@@ -115,13 +122,9 @@ def CaptionGenerator(JsonPath:str,
             # Get the probablities
             probs = F.softmax(logits, dim=-1)
             # TopK sampling
-            TopkProbs, TopkIndices = torch.topk(probs, 50, dim=-1)
-            # Select a token from topk
-            Index = torch.multinomial(TopkProbs, 1, generator=SampleRng)
-            # Gather the indices
-            xcol = torch.gather(TopkIndices, -1, Index)
-            # Append the sequence
-            XGen = torch.cat((XGen, xcol), dim=1)
+            _, TopkIndices = torch.topk(probs, 50, dim=-1)
+            CurrentTok = TopkIndices[0]
+            CaptionTokens.append(CurrentTok)
 
     # Print the text which has been generated
     '''DecodedValues = []
@@ -133,8 +136,7 @@ def CaptionGenerator(JsonPath:str,
         DecodedValues.append(decoded)
 
     return DecodedValues'''
-    tokens = XGen.tolist()
-    Decoded = tokenizer.decode(tokens)
+    Decoded = tokenizer.decode(CaptionTokens)
     return Decoded
 
 
