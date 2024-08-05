@@ -124,10 +124,10 @@ def CaptionGenerator(JsonPath:str,
             TopkProbs, TopkIndices = torch.topk(probs, 50, dim=-1)
             ix = torch.multinomial(TopkProbs, 1, generator=SampleRng) # (B, 1)
 
-                                # gather the corresponding indices
+            # gather the corresponding indices
 
             xcol = torch.gather(TopkIndices, -1, ix) # (B, 1)
-            print(xcol)
+            print(TopkProbs)
             CurrentTok = int(xcol)
             CaptionTokens.append(CurrentTok)
             index = len(CaptionTokens)
