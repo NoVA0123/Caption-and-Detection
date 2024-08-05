@@ -101,10 +101,8 @@ def CaptionGenerator(JsonPath:str,
     CaptionTokens = [CurrentTok]
     NumPadTok = MaxLen - len(CaptionTokens)
     PaddingToken = [tokenizer.token_to_id('[PAD]')]
-    XGen = torch.tensor(CaptionTokens, dtype=torch.long)
-    XGen = torch.cat([
-        XGen,
-        torch.tensor(PaddingToken * NumPadTok, dtype=torch.long)])
+    XGen = torch.cat([torch.tensor(CaptionTokens, dtype=torch.long),
+                      torch.tensor(PaddingToken * NumPadTok, dtype=torch.long)])
     XGen = XGen.unsqueeze(0)
     XGen = XGen.to(device)
 
@@ -123,8 +121,8 @@ def CaptionGenerator(JsonPath:str,
             # Get the probablities
             probs = F.softmax(logits, dim=-1)
             # TopK sampling
-            _, TopkIndices = torch.topk(probs, 50, dim=-1)
-            CurrentTok = TopkIndices[0]
+            _, TopkIndices = torch.topk(probs, 1, dim=-1)
+            CurrentTok = TopkIndices[0, 0]
             CaptionTokens.append(CurrentTok)
             index = len(CaptionTokens)
             XGen[0, index-1] = CaptionTokens[-1]
