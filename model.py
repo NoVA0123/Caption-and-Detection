@@ -209,6 +209,7 @@ def train(rank:int,
 
     # Adding grad scaler for mixed precision
     Scaler = torch.cuda.amp.GradScaler()
+    UseScaler = True
     if DistDataParallel:
         '''
         DDP function is neccessary for Distributive computing because, during
@@ -327,8 +328,10 @@ def train(rank:int,
             if DistDataParallel:
                 dist.all_reduce(LossAccum,
                                 op=dist.ReduceOp.AVG)
+
             # Applying norm on gradients to reduce shock of the model
-            norm = torch.nn.utils.clip_grad_norm(model.parameters(), 1.0)
+            if not UseScaler:
+                norm = torch.nn.utils.clip_grad_norm(model.parameters(), 1.0)
             
             # Decay in learning rate
             lr = get_decay_lr(GlobalSteps,
