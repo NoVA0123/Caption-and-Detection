@@ -10,12 +10,10 @@ class cmha(nn.Module):
         super(cmha, self).__init__()
         # Query, key and value in a batch
         self.qkvLayer = nn.Linear(config.nEmbd,
-                                  3 * config.nEmbd,
-                                  dtype=torch.float)
+                                  3 * config.nEmbd)
         # Output projection
         self.proj = nn.Linear(config.nEmbd,
-                              config.nEmbd,
-                              dtype=torch.float)
+                              config.nEmbd)
         self.proj.TRANSFORMER_SCALE_INIT = 1
         # Regularization
         self.nHead = config.nHead

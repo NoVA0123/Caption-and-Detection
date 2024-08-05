@@ -206,6 +206,9 @@ def train(rank:int,
     model.to(device) 
     # To compile model and make model faster
     model = torch.compile(model)
+
+    # Adding grad scaler for mixed precision
+    Scaler = torch.cuda.amp.GradScaler()
     if DistDataParallel:
         '''
         DDP function is neccessary for Distributive computing because, during
@@ -276,10 +279,16 @@ def train(rank:int,
                 Autocasting to datatypes of model to bfloat16 as it is 4x
                 faster than normal float32. It reduces the decimal value.
                 '''
-                if torch.cuda.is_bf16_supported():
-                    with torch.autocast(device_type=device_type,
+                if device_type == 'cuda':
+                    if torch.cuda.is_bf16_supported():
+                        with torch.autocast(device_type=device_type,
                                         dtype=torch.bfloat16):
-                        _, loss = model(DecoderInput, img, Label)
+                            _, loss = model(DecoderInput, img, Label)
+                    else:
+                        with torch.autocast(device_type=device_type,
+                                            dtype=torch.float16):
+                            _, loss = model(DecoderInput, img, Label)
+
                 else:
                     _, loss = model(DecoderInput, img, Label)
 
@@ -312,7 +321,7 @@ def train(rank:int,
                 '''
                 if DistDataParallel:
                     model.require_backward_grad_sync = (MicroSteps == GradAccumSteps - 1)
-                loss.backward()
+                Scaler.scale(loss).backward()
             
             # Reduce gradients alltogther
             if DistDataParallel:
@@ -351,6 +360,7 @@ def train(rank:int,
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'global_step': GlobalSteps,
+            'scaler': Scaler.state_dict()
             }, ModelName)
 
     else:
@@ -360,6 +370,7 @@ def train(rank:int,
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'global_step': GlobalSteps,
+            'scaler': Scaler.state_dict()
             }, ModelName)
 
 

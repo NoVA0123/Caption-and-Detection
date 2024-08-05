@@ -24,8 +24,7 @@ def get_cnn_model(MaxSeqLen:int,
         params.requires_grad = False
 
     effnetv2s.classifier[1] = nn.Linear(NumFeatures,
-                                        MaxSeqLen * DModel,
-                                        dtype=torch.float)
+                                        MaxSeqLen * DModel)
 
     if ExistingPath is not None and os.path.exists(ExistingPath):
         weights = torch.load(ExistingPath)

@@ -13,12 +13,10 @@ class ffn(nn.Module):
         original size.
         '''
         self.linear1 = nn.Linear(config.nEmbd,
-                                 4 * config.nEmbd,
-                                 dtype=torch.float)
+                                 4 * config.nEmbd)
         self.gelu = nn.GELU(approximate='tanh')
         self.proj = nn.Linear(config.nEmbd * 4,
-                              config.nEmbd,
-                              dtype=torch.float)
+                              config.nEmbd)
         self.proj.TRANSFORMER_SCALE_INIT = 1
 
     def forward(self, x):
