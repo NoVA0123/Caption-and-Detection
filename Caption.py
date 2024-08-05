@@ -99,20 +99,21 @@ def CaptionGenerator(JsonPath:str,
     # NumReturnSequences = 4
     CurrentTok = tokenizer.token_to_id('[SOS]')
     CaptionTokens = [CurrentTok]
+    NumPadTok = MaxLen - len(CaptionTokens)
+    PaddingToken = [tokenizer.token_to_id('[PAD]')]
+    XGen = torch.tensor(CaptionTokens, dtype=torch.long)
+    XGen = torch.cat([
+        XGen,
+        torch.tensor(PaddingToken * NumPadTok, dtype=torch.long)])
+    XGen = XGen.unsqueeze(0)
+    XGen = XGen.to(device)
 
     img = img.unsqueeze(0)#.repeat(NumReturnSequences, 1, 1)
     img = img.to(device)
-    PaddingToken = [tokenizer.token_to_id('[PAD]')]
     SampleRng = torch.Generator(device=device)
     SampleRng.manual_seed(42)
     while len(CaptionTokens) < MaxLen and CurrentTok != tokenizer.token_to_id('[EOS]'):
 
-        NumPadTok = MaxLen - len(CaptionTokens)
-        XGen = torch.tensor(CaptionTokens, dtype=torch.long)
-        XGen = torch.cat([
-                    XGen,
-                    torch.tensor(PaddingToken * NumPadTok, dtype=torch.long)])
-        XGen = XGen.to(device)
 
         # forwarding the model
         with torch.no_grad():
@@ -125,6 +126,8 @@ def CaptionGenerator(JsonPath:str,
             _, TopkIndices = torch.topk(probs, 50, dim=-1)
             CurrentTok = TopkIndices[0]
             CaptionTokens.append(CurrentTok)
+            index = len(CaptionTokens)
+            XGen[0, index-1] = CaptionTokens[-1]
 
     # Print the text which has been generated
     '''DecodedValues = []
