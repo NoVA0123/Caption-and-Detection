@@ -121,8 +121,13 @@ def CaptionGenerator(JsonPath:str,
             # Get the probablities
             probs = F.softmax(logits, dim=-1)
             # TopK sampling
-            _, TopkIndices = torch.topk(probs, 1, dim=-1)
-            CurrentTok = int(TopkIndices[0, 0])
+            TopkProbs, TopkIndices = torch.topk(probs, 50, dim=-1)
+            ix = torch.multinomial(TopkProbs, 1, generator=SampleRng) # (B, 1)
+
+                                # gather the corresponding indices
+
+            xcol = torch.gather(TopkIndices, -1, ix) # (B, 1)
+            CurrentTok = int(xcol)
             CaptionTokens.append(CurrentTok)
             index = len(CaptionTokens)
             XGen[0, index-1] = CaptionTokens[-1]
