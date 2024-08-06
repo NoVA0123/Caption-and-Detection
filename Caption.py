@@ -120,9 +120,9 @@ def CaptionGenerator(JsonPath:str,
             # Take the logits at last position
             logits = logits[:, index-1, :]
             # Get the probablities
-            probs = F.softmax(logits, dim=-1)
+            probs = F.log_softmax(logits, dim=-1)
             # TopK sampling
-            TopkProbs, TopkIndices = torch.topk(probs, 20, dim=-1)
+            TopkProbs, TopkIndices = torch.topk(probs, 50, dim=-1)
             ix = torch.multinomial(TopkProbs, 1, generator=SampleRng) # (B, 1)
 
             # gather the corresponding indices
