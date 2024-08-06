@@ -23,7 +23,7 @@ from base_files.dataset_files.image_extracter import imgextracter
 
 
 
-def cpu_optimzer():
+'''def cpu_optimzer():
     N = os.cpu_count() # Counts number of cpu's
     os.environ['OMP_NUM_THREADS'] = str(N) # Set use of cpu's
     os.environ['OMP_SCHEDULE'] = 'STATIC' # Scheduling threads
@@ -38,7 +38,7 @@ def cpu_optimzer():
     # Thread wait time
     os.environ['KMP_BLOCKTIME'] = '1'
     # Changing JEMALLOC to TCMALLOC
-    os.environ['LD_PRELOAD']='<jemalloc.so/tcmalloc.so>:$LD_PRELOAD'
+    os.environ['LD_PRELOAD']='<jemalloc.so/tcmalloc.so>:$LD_PRELOAD' '''
 
 
 def setup(rank:int,
@@ -416,7 +416,7 @@ def command_line_argument():
 
 # Running the model
 if __name__ == "__main__":
-    cpu_optimzer()
+    '''cpu_optimzer()'''
     JsonPath = command_line_argument()
     world_size = torch.cuda.device_count()
     if world_size > 1:
