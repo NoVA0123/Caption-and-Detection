@@ -23,22 +23,12 @@ from base_files.dataset_files.image_extracter import imgextracter
 
 
 
-'''def cpu_optimzer():
+def cpu_optimzer():
     N = os.cpu_count() # Counts number of cpu's
     os.environ['OMP_NUM_THREADS'] = str(N) # Set use of cpu's
     os.environ['OMP_SCHEDULE'] = 'STATIC' # Scheduling threads
     # Making threads to not move between CPU's
     os.environ['OMP_PROC_BIND'] = 'CLOSE'
-    # Binding threads to its specific cpu
-    os.environ['GOMP_CPU_AFFINITY'] = 'N-M'
-    # Changing libgomp to libomp
-    os.environ['LD_PRELOAD'] = '<path>/libiomp5.so:$LD_PRELOAD'
-    # Binding threads to physical processing units
-    os.environ['KMP_AFFINITY'] = 'granularity=fine,proclist=[N-M],explicit'
-    # Thread wait time
-    os.environ['KMP_BLOCKTIME'] = '1'
-    # Changing JEMALLOC to TCMALLOC
-    os.environ['LD_PRELOAD']='<jemalloc.so/tcmalloc.so>:$LD_PRELOAD' '''
 
 
 def setup(rank:int,
@@ -416,7 +406,6 @@ def command_line_argument():
 
 # Running the model
 if __name__ == "__main__":
-    '''cpu_optimzer()'''
     JsonPath = command_line_argument()
     world_size = torch.cuda.device_count()
     if world_size > 1:
