@@ -126,12 +126,6 @@ def train(rank:int,
         device_type = device
         DistDataParallel = False
 
-    # Running optimization for cpu
-    if DistDataParallel:
-        if rank == 0:
-
-            
-
     # Ignore warnings
     warnings.filterwarnings('ignore')
 
