@@ -101,9 +101,13 @@ class transformer(nn.Module):
         PosEmbd = self.transformer.posEmbd(Pos)
         TokEmbd = self.transformer.tokEmbd(Input)
 
-        # Adding both the embeddings
-        x = PosEmbd + TokEmbd
-        
+        # Passing image through Cnn Model
+        CnnOutput = self.cnnModel(Img)
+        CnnOutput = torch.reshape(CnnOutput,
+                                  (BatchSize, SeqLen, self.config.nEmbd)) 
+
+        # Adding both the embeddings and CNN output
+        x = PosEmbd + TokEmbd + CnnOutput
 
         # applying decoder block
         for block in self.transformer.hid:
@@ -111,13 +115,6 @@ class transformer(nn.Module):
 
         # forward the final layernorm
         x = self.transformer.layerNorm(x)
-
-        # Passing image through Cnn Model
-        CnnOutput = self.cnnModel(Img)
-        CnnOutput = torch.reshape(CnnOutput,
-                                  (BatchSize, SeqLen, self.config.nEmbd)) 
-        # Adding Cnn model output before sending it to decoder
-        x = x + CnnOutput
 
         # Classifying
         logits = self.head(x)
