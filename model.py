@@ -23,6 +23,24 @@ from base_files.dataset_files.image_extracter import imgextracter
 
 
 
+def cpu_optimzer():
+    N = os.cpu_count() # Counts number of cpu's
+    os.environ['OMP_NUM_THREADS'] = str(N) # Set use of cpu's
+    os.environ['OMP_SCHEDULE'] = 'STATIC' # Scheduling threads
+    # Making threads to not move between CPU's
+    os.environ['OMP_PROC_BIND'] = 'CLOSE'
+    # Binding threads to its specific cpu
+    os.environ['GOMP_CPU_AFFINITY'] = 'N-M'
+    # Changing libgomp to libomp
+    os.environ['LD_PRELOAD'] = '<path>/libiomp5.so:$LD_PRELOAD'
+    # Binding threads to physical processing units
+    os.environ['KMP_AFFINITY=granularity'] = 'fine,proclist=[N-M],explicit'
+    # Thread wait time
+    os.environ['KMP_BLOCKTIME'] = '1'
+    # Changing JEMALLOC to TCMALLOC
+    os.environ['LD_PRELOAD']='<jemalloc.so/tcmalloc.so>:$LD_PRELOAD'
+
+
 def setup(rank:int,
           world_size:int):
 
@@ -107,6 +125,12 @@ def train(rank:int,
         
         device_type = device
         DistDataParallel = False
+
+    # Running optimization for cpu
+    if DistDataParallel:
+        if rank == 0:
+
+            
 
     # Ignore warnings
     warnings.filterwarnings('ignore')
@@ -241,7 +265,7 @@ def train(rank:int,
                                            device=device_type)
 
     # Creating gradient accumulation step to increase batch size
-    TotalBatchSize = 2**19
+    TotalBatchSize = 2**17
     assert TotalBatchSize % (BatchSize * MaxLen * world_size) == 0, "Make sure the total batch size is divisible by Batch * SeqLen"
     GradAccumSteps = TotalBatchSize // (BatchSize * MaxLen * world_size)
     if rank == 0: # This will prevent displaying text multiple times
@@ -259,7 +283,7 @@ def train(rank:int,
             t0 = time.time() # Storing time of begining of the step
             # Storing values
 
-            optimizer.zero_grad() # Setting optimizer to zero for every step
+            optimizer.zero_grad(set_to_none=True) # Setting optimizer to zero for every step
 
             # Initializing loss accumalation(details are present in loss calculating code)
             LossAccum = 0.
@@ -321,7 +345,10 @@ def train(rank:int,
                 '''
                 if DistDataParallel:
                     model.require_backward_grad_sync = (MicroSteps == GradAccumSteps - 1)
-                Scaler.scale(loss).backward()
+                if UseScaler:
+                    Scaler.scale(loss).backward()
+                else:
+                    loss.backward()
             
             # Reduce gradients alltogther
             if DistDataParallel:
@@ -395,6 +422,7 @@ def command_line_argument():
 
 # Running the model
 if __name__ == "__main__":
+    cpu_optimzer()
     JsonPath = command_line_argument()
     world_size = torch.cuda.device_count()
     if world_size > 1:

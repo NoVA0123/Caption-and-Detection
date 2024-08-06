@@ -107,7 +107,7 @@ class transformer(nn.Module):
                                   (BatchSize, SeqLen, self.config.nEmbd)) 
 
         # Adding both the embeddings and CNN output
-        x = PosEmbd + TokEmbd + CnnOutput
+        x = PosEmbd.add(TokEmbd).add(CnnOutput)
 
         # applying decoder block
         for block in self.transformer.hid:
