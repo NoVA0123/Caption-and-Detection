@@ -34,7 +34,7 @@ def cpu_optimzer():
     # Changing libgomp to libomp
     os.environ['LD_PRELOAD'] = '<path>/libiomp5.so:$LD_PRELOAD'
     # Binding threads to physical processing units
-    os.environ['KMP_AFFINITY=granularity'] = 'fine,proclist=[N-M],explicit'
+    os.environ['KMP_AFFINITY'] = 'granularity=fine,proclist=[N-M],explicit'
     # Thread wait time
     os.environ['KMP_BLOCKTIME'] = '1'
     # Changing JEMALLOC to TCMALLOC
