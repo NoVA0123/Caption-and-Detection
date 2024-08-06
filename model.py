@@ -286,8 +286,7 @@ def train(rank:int,
                                         dtype=torch.bfloat16):
                             _, loss = model(DecoderInput, img, Label)
                     else:
-                        with torch.autocast(device_type=device_type,
-                                            dtype=torch.float16):
+                        with torch.cuda.amp.autocast():
                             _, loss = model(DecoderInput, img, Label)
 
                 else:
