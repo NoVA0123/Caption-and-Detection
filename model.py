@@ -209,14 +209,6 @@ def train(rank:int,
         ImgData = DataLoader(ImgDataClass,
                              batch_size=BatchSize)
 
-    # Image transformation
-    transform = v2.Compose([
-        v2.ToDtype(torch.float, scale=True),
-        v2.Resize(size=[224,224]),
-        v2.Normalize(mean=[0,0,0], std=[1,1,1])
-        ])
-    transform = transform.to(device)
-
     # Initializing the transformer model
     model = transformer(config=config,
                         CnnModel=effnetv2s)
@@ -291,8 +283,6 @@ def train(rank:int,
                 DecoderInput = caption['decoder_input'].to(device)
                 Label = caption['label'].to(device)
                 img = img.to(device)
-                img = transform(img)
-
 
                 '''
                 Autocasting to datatypes of model to bfloat16 as it is 4x
