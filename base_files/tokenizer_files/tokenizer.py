@@ -82,7 +82,7 @@ class texttoid:
         self.padToken = torch.tensor([PadToken], dtype=torch.long) # Padding
 
     def __len__(self):
-        return self.tokenizedTensor.shape(0)
+        return self.tokenizedTensor.size(0)
 
     def __getitem__(self, index) -> dict:
 
