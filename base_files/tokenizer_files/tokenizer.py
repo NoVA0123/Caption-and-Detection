@@ -89,7 +89,7 @@ class texttoid:
         DecoderInput = self.tokenizedTensor[index] # Tokenized sentence
         # Label should 1 value ahead of input
         Label = torch.cat([
-            DecoderInput[:, 1:],
+            DecoderInput[1:],
             self.padToken
             ])
         
