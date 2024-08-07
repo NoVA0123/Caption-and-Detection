@@ -14,11 +14,10 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed import init_process_group, destroy_process_group
 import torch.distributed as dist
 import torch.multiprocessing as mp
-from torchvision.transforms import v2
 from base_files.transformer_files.dataclass import transformerconfig
 from base_files.transformer_files.transformer import transformer
 from base_files.cnn_model_files.cnn_model import get_cnn_model
-from base_files.tokenizer_files.tokenizer import get_tokenizer, texttoid, fast_tokennizer
+from base_files.tokenizer_files.tokenizer import get_tokenizer, texttoid, fast_tokenizer
 from base_files.dataset_files.json_extracter import caption_extracter
 from base_files.dataset_files.image_extracter import imgextracter
 
