@@ -18,7 +18,7 @@ from torchvision.transforms import v2
 from base_files.transformer_files.dataclass import transformerconfig
 from base_files.transformer_files.transformer import transformer
 from base_files.cnn_model_files.cnn_model import get_cnn_model
-from base_files.tokenizer_files.tokenizer import get_tokenizer, texttoid
+from base_files.tokenizer_files.tokenizer import get_tokenizer, texttoid, fast_tokennizer
 from base_files.dataset_files.json_extracter import caption_extracter
 from base_files.dataset_files.image_extracter import imgextracter
 
@@ -117,12 +117,15 @@ def train(rank:int,
         device_type = device
         DistDataParallel = False
 
+
     # Ignore warnings
     warnings.filterwarnings('ignore')
+
 
     # Setting null to None(for Json)
     null = None
     
+
     # Loading json
     with open (JsonPath, 'r') as f:
         data = json.load(f)
@@ -134,19 +137,7 @@ def train(rank:int,
     # Extracting caption and storing corresponding image path
     TrainData = caption_extracter(TrainJson, TrainImgPath)
 
-    # Creating a tokenizer
-    if data['tokenizer_config']['tokenizer_save_path'] is null:
-        tokenizer = get_tokenizer(TrainData)
-    else:
-        tokenizer = get_tokenizer(TrainData,
-                                  data['tokenizer_config']['tokenizer_path'])
 
-
-    # Changing sample size
-    TotalSamples = data['dataset_config']['max_sample']
-    TrainData = TrainData.sample(TotalSamples,
-                                 random_state=1337).reset_index(drop=True)
-    
     '''Initializing Config parameters'''
 
     # Initializing transformer config 
@@ -157,47 +148,81 @@ def train(rank:int,
     NumHeads = TrConf['number_heads']
     DModel = TrConf['d_model']
 
-    config = transformerconfig(blockSize=MaxLen,
-                               vocabSize=VocabSize,
-                               nLayers=NumLayers,
-                               nHead=NumHeads,
-                               nEmbd=DModel)
+    # Sample Size
+    TotalSamples = data['dataset_config']['max_sample']
 
     # Initializing model hyper parameters
     ModelConfig = data['model_config']
     BatchSize = ModelConfig['batch_size']
     Epochs = ModelConfig['epochs']
-    
-    # Downloading the Cnn model
+
+    # Cnn Model parameters
     CnnConf = data['cnn_model_config']
     ExistingPath = CnnConf['existing_path']
     SpecificDownloadPath = CnnConf['specific_download_path']
+
+
+    # Creating a tokenizer
+    if data['tokenizer_config']['tokenizer_save_path'] is null:
+        tokenizer = get_tokenizer(TrainData)
+    else:
+        tokenizer = get_tokenizer(TrainData,
+                                  data['tokenizer_config']['tokenizer_path'])
+
+
+    # Creating fast tokenizer
+    WrappedTokenizer = fast_tokenizer(tokenizer=tokenizer,
+                                       MaxSeqLen=MaxLen)
+
+    TokenizedSentences = WrappedTokenizer(text=TrainData['caption'].tolist(),
+                                          return_tensors='pt',
+                                          padding='max_length') 
+
+
+    # Changing sample size
+    TrainData = TrainData.sample(TotalSamples,
+                                 random_state=1337).reset_index(drop=True)
+    
+
+    config = transformerconfig(blockSize=MaxLen,
+                               vocabSize=VocabSize,
+                               nLayers=NumLayers,
+                               nHead=NumHeads,
+                               nEmbd=DModel)
+    
+
+    # Downloading the Cnn model
     if ExistingPath is not None and SpecificDownloadPath is not None:
         effnetv2s = get_cnn_model(MaxSeqLen=MaxLen,
                                   DModel=DModel,
                                   ExistingPath=ExistingPath,
                                   SpecificDownloadPath=SpecificDownloadPath)
+
     else:
         effnetv2s = get_cnn_model(MaxSeqLen=MaxLen,
                                   DModel=DModel)
 
 
     # Loading caption data into dataloader
-    CaptionDataClass = texttoid(tokenizer=tokenizer,
-                          MaxSeqLen=MaxLen,
-                          dataframe=TrainData)
+    PadToken = tokenizer.token_to_id(['PAD'])
+    CaptionDataClass = texttoid(TokenizedSentences,
+                                PadToken)
+
 
     if DistDataParallel:
         CaptionData = parallel_data_sampler(rank=rank,
                                             WorldSize=world_size,
                                             dataset=CaptionDataClass,
                                             batch_size=BatchSize)
+
     else:
         CaptionData = DataLoader(CaptionDataClass,
                                  batch_size=BatchSize)
 
+
     # Loading Image data into dataloader
     ImgDataClass = imgextracter(dataframe=TrainData)
+
 
     if DistDataParallel:
         ImgData = parallel_data_sampler(rank=rank,
@@ -209,16 +234,21 @@ def train(rank:int,
         ImgData = DataLoader(ImgDataClass,
                              batch_size=BatchSize)
 
+
     # Initializing the transformer model
     model = transformer(config=config,
                         CnnModel=effnetv2s)
     model.to(device) 
+
     # To compile model and make model faster
     model = torch.compile(model)
 
+
     # Adding grad scaler for mixed precision
-    Scaler = torch.cuda.amp.GradScaler()
+    Scaler = torch.GradScaler(device_type)
     UseScaler = True
+
+
     if DistDataParallel:
         '''
         DDP function is neccessary for Distributive computing because, during
@@ -231,8 +261,11 @@ def train(rank:int,
         model = DDP(model,
                     device_ids=[device])
 
+
     # We need to create raw model for our configure optimizer to work properly
     raw_model = model.module if DistDataParallel else model
+
+
 
     '''Initializing optimizer'''
     # Making a decay learning rate
@@ -249,6 +282,7 @@ def train(rank:int,
                                            LearningRate=6e-4,
                                            device=device_type)
 
+
     # Creating gradient accumulation step to increase batch size
     TotalBatchSize = 2**20
     assert TotalBatchSize % (BatchSize * MaxLen * world_size) == 0, "Make sure the total batch size is divisible by Batch * SeqLen"
@@ -257,6 +291,7 @@ def train(rank:int,
         print(f"Total batch size is: {TotalBatchSize} ")
         print(f"-> calculated gradient accumulation steps: {GradAccumSteps}")
 
+
     # Training
     GlobalSteps = 0
     for i in tqdm(range(Epochs)):
@@ -264,14 +299,15 @@ def train(rank:int,
         IterCapData = iter(CaptionData)
 
         LocalSteps = 0
+
         for _ in range(len(ImgData)//GradAccumSteps):
             t0 = time.time() # Storing time of begining of the step
-            # Storing values
 
             optimizer.zero_grad(set_to_none=True) # Setting optimizer to zero for every step
 
             # Initializing loss accumalation(details are present in loss calculating code)
             LossAccum = 0.
+
             # Accumulated gradient calculation
             for MicroSteps in range(GradAccumSteps):
 
@@ -284,17 +320,22 @@ def train(rank:int,
                 Label = caption['label'].to(device)
                 img = img.to(device)
 
+
                 '''
                 Autocasting to datatypes of model to bfloat16 as it is 4x
                 faster than normal float32. It reduces the decimal value.
                 '''
                 if device_type == 'cuda':
+
                     if torch.cuda.is_bf16_supported():
+
                         with torch.autocast(device_type=device_type,
                                         dtype=torch.bfloat16):
                             _, loss = model(DecoderInput, img, Label)
+
                     else:
-                        with torch.cuda.amp.autocast():
+                        with torch.autocast(device_type=device_type,
+                                            dtype=torch.float16):
                             _, loss = model(DecoderInput, img, Label)
 
                 else:
@@ -308,6 +349,7 @@ def train(rank:int,
                 '''
                 loss = loss / GradAccumSteps
                 LossAccum += loss.detach() # Keeps on adding gradient
+
                 '''
                 Gradient syncing is stopped before last step because it
                 increase training process and synchronize every inner loop will
@@ -329,11 +371,14 @@ def train(rank:int,
                 '''
                 if DistDataParallel:
                     model.require_backward_grad_sync = (MicroSteps == GradAccumSteps - 1)
+
                 if UseScaler:
                     Scaler.scale(loss).backward()
+
                 else:
                     loss.backward()
             
+
             # Reduce gradients alltogther
             if DistDataParallel:
                 dist.all_reduce(LossAccum,
@@ -349,27 +394,37 @@ def train(rank:int,
                               MaxSteps=MaxSteps,
                               MaxLr=MaxLr,
                               MinLr=MinLr)
+
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
+
             if not UseScaler:
                 optimizer.step() # Applying a backpropogation step
+
             else:
                 Scaler.step(optimizer)
                 Scaler.update()
+
             # Synchronizing GPU and CPU runtime
             torch.cuda.synchronize()
+
             # Storing output time
             t1 = time.time()
             dt = t1 - t0 
+
+            # Calculating Tokens processed per second
             TokensProcessed = BatchSize * MaxLen * GradAccumSteps * world_size
             TokensPerSec = TokensProcessed / dt
 
             GlobalSteps += 1
             LocalSteps += 1
+
             if rank == 0 and not UseScaler:
                 print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} |{norm: .2f} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
+
             elif rank == 0 and UseScaler:
                 print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} |Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
+
 
     if DistDataParallel and rank == 0:
 
@@ -397,6 +452,7 @@ def train(rank:int,
     if DistDataParallel:
         destroy_process_group()
 
+
 # Argument parser
 def command_line_argument():
     parser = ArgumentParser()
@@ -406,8 +462,10 @@ def command_line_argument():
 
 # Running the model
 if __name__ == "__main__":
+
     JsonPath = command_line_argument()
     world_size = torch.cuda.device_count()
+
     if world_size > 1:
         mp.spawn(train,
                  args=(world_size, JsonPath.Path),
@@ -416,6 +474,7 @@ if __name__ == "__main__":
     else:
         rank = 0
         world_size = 1
+
         train(rank,
               world_size,
               JsonPath.Path)

@@ -1,9 +1,12 @@
 import os
-import tokenizers
-from tokenizers import Tokenizer
-from tokenizers.models import WordLevel
-from tokenizers.trainers import WordLevelTrainer
-from tokenizers.pre_tokenizers import Whitespace
+from tokenizers import (decoders,
+                        models,
+                        normalizers,
+                        pre_tokenizers,
+                        processors,
+                        trainers,
+                        Tokenizer)
+from transformers import PreTrainedTokenizerFast
 import pandas as pd
 import torch
 from tqdm.auto import tqdm
@@ -17,25 +20,49 @@ def get_tokenizer(dataset:pd.DataFrame,
         return tokenizer
 
 
-    tokenizer = Tokenizer(WordLevel(unk_token='[UNK]')) # To represent Unkown words
-    tokenizer.pre_tokenizer = Whitespace() # Words are seperated by spaces
+    tokenizer = Tokenizer(models.WordPiece(unk_token='[UNK]')) # To represent Unkown words
+    tokenizer.pre_tokenizer = pre_tokenizers.Whitespace() # Words are seperated by spaces
     
-    '''
-    Start and end of a sentence should be defined and also the minimum appearance
+    ''' Start and end of a sentence should be defined and also the minimum appearance
     of a word should be 2.
     '''
 
-    trainer = WordLevelTrainer(special_tokens=["[UNK]",
-                                               "[PAD]",
-                                               "[SOS]",
-                                               "[EOS]"],
-                               min_frequency=2)
+    trainer = trainers.WordPieceTrainer(special_tokens=["[UNK]",
+                                                        "[PAD]",
+                                                        "[SOS]",
+                                                        "[EOS]"],
+                                        min_frequency=2)
 
+    # Training the tokenizer
     tokenizer.train_from_iterator(get_all_sentences(dataset),
                                   trainer=trainer)
+
+    # Changing the decoder
+    tokenizer.decode = decoders.WordPiece()
+
+    # Changing Post processor
+    SosToken = tokenizer.token_to_id('[SOS]')
+    EosToken = tokenizer.token_to_id('[EOS]')
+    tokenizer.post_processor = processors.TemplateProcessing(
+            single=f'[SOS]:0 $A:0 [EOS]:0',
+            special_tokens=[('[SOS]', SosToken), ('[EOS]', EosToken)])
+
+    # Saving the tokenizer
     tokenizer.save(path)
     
     return tokenizer
+
+
+def fast_tokenizer(tokenizer:Tokenizer,
+                   MaxSeqLen:int) -> PreTrainedTokenizerFast:
+
+    return PreTrainedTokenizerFast(tokenizer_object=tokenizer,
+                                   unk_token='[UNK]',
+                                   pad_token='[PAD]',
+                                   bos_token='[SOS]', # Begining of sentence
+                                   eos_token='[EOS]',
+                                   padding_side='right',
+                                   model_max_length=MaxSeqLen)
 
 
 def get_all_sentences(dataset: pd.DataFrame):
@@ -48,50 +75,26 @@ def get_all_sentences(dataset: pd.DataFrame):
 # Convert text to id class
 class texttoid:
     def __init__(self,
-                 tokenizer: Tokenizer,
-                 MaxSeqLen: int,
-                 dataframe: pd.DataFrame):
+                 TokenizedTensor,
+                 PadToken:int=1):
 
-        self.tokenizer = tokenizer
-        self.maxSeqLen = MaxSeqLen
-        self.dataframe = dataframe
-
-        self.sosToken = torch.tensor([tokenizer.token_to_id('[SOS]')],
-                                     dtype=torch.long)
-        self.eosToken = torch.tensor([tokenizer.token_to_id('[EOS]')],
-                                     dtype=torch.long)
-        self.padToken = torch.tensor([tokenizer.token_to_id('[PAD]')],
-                                     dtype=torch.long)
+        self.tokenizedTensor = TokenizedTensor # Tokenized Tensor
+        self.padToken = torch.tensor([PadToken], dtype=torch.long) # Padding
 
     def __len__(self):
-        return len(self.dataframe)
+        return self.tokenizedTensor.shape(0)
 
     def __getitem__(self, index) -> dict:
-        
-        x = self.dataframe['caption'][index] # Caption
 
-        # Turning sentences into respective token ids
-        DecInputTok = self.tokenizer.encode(x).ids
-        
-        # Finding number of Padding tokens
-        NumPadTok = self.maxSeqLen - len(DecInputTok) - 1
-
-        # Concatenating tensors (Sos, Input, Padding)
-        DecoderInput = torch.cat([
-            self.sosToken,
-            torch.tensor(DecInputTok, dtype=torch.long),
-            torch.tensor([self.padToken] * NumPadTok, dtype=torch.long)
+        DecoderInput = self.tokenizedTensor[index] # Tokenized sentence
+        # Label should 1 value ahead of input
+        Label = torch.cat([
+            DecoderInput[:, 1:],
+            self.padToken
             ])
-
-        label = torch.cat([
-            torch.tensor(DecInputTok, dtype=torch.long),
-            self.eosToken,
-            torch.tensor([self.padToken] * NumPadTok, dtype=torch.long)
-            ])
-
-
+        
         return{
                 "decoder_input": DecoderInput,
-                "label": label
+                "label": Label
                 }
 
