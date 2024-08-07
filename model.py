@@ -14,6 +14,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed import init_process_group, destroy_process_group
 import torch.distributed as dist
 import torch.multiprocessing as mp
+from torchvision.transforms import v2
 from base_files.transformer_files.dataclass import transformerconfig
 from base_files.transformer_files.transformer import transformer
 from base_files.cnn_model_files.cnn_model import get_cnn_model
@@ -208,6 +209,14 @@ def train(rank:int,
         ImgData = DataLoader(ImgDataClass,
                              batch_size=BatchSize)
 
+    # Image transformation
+    transform = v2.Compose([
+        v2.ToDtype(torch.float, scale=True),
+        v2.Resize(size=[224,224]),
+        v2.Normalize(mean=[0,0,0], std=[1,1,1])
+        ])
+    transform = transform.to(device)
+
     # Initializing the transformer model
     model = transformer(config=config,
                         CnnModel=effnetv2s)
@@ -282,6 +291,7 @@ def train(rank:int,
                 DecoderInput = caption['decoder_input'].to(device)
                 Label = caption['label'].to(device)
                 img = img.to(device)
+                img = transform(img)
 
 
                 '''
