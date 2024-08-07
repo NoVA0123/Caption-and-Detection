@@ -181,7 +181,7 @@ def train(rank:int,
     # Changing sample size
     TrainData = TrainData.sample(TotalSamples,
                                  random_state=1337).reset_index(drop=True)
-    TokenizedSentences = TokenizedSentences[:TotalSamples, :]
+    TokenizedSentences = TokenizedSentences[:TotalSamples]
     
 
     config = transformerconfig(blockSize=MaxLen,
