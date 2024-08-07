@@ -19,7 +19,7 @@
     },
     "transformer_config":{
         "block_size": 64,
-        "vocab_size": 20480,
+        "vocab_size": 30080,
         "number_layers": 6,
         "number_heads": 6,
         "d_model": 384
