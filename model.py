@@ -246,7 +246,7 @@ def train(rank:int,
 
 
     # Adding grad scaler for mixed precision
-    Scaler = torch.GradScaler(device_type)
+    Scaler = torch.cuda.amp.GradScaler()
     UseScaler = True
 
 
