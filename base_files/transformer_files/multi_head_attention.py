@@ -64,10 +64,10 @@ class cmha(nn.Module):
         Att = F.softmax(Att, dim=-1)
         # Matrix Multiplication with Value vector
         y = Att @ v'''
-        y = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        x = F.scaled_dot_product_attention(q, k, v, is_causal=True)
 
         # Re - assemble the matrix to its original shape
-        y = y.transpose(1, 2).contiguous().view(BatchSize, SeqLen, DModel)
+        x = x.transpose(1, 2).contiguous().view(BatchSize, SeqLen, DModel)
         # Output projection
-        y = self.proj(y)
-        return y
+        x = self.proj(x)
+        return x

@@ -99,25 +99,28 @@ class transformer(nn.Module):
         # Applying embeddings and tokenization
         Pos = torch.arange(0, SeqLen, dtype=torch.int, device=Input.device)
         PosEmbd = self.transformer.posEmbd(Pos)
-        TokEmbd = self.transformer.tokEmbd(Input)
-
-        # Passing image through Cnn Model
-        CnnOutput = self.cnnModel(Img)
-        CnnOutput = torch.reshape(CnnOutput,
-                                  (BatchSize, SeqLen, self.config.nEmbd)) 
+        Input = self.transformer.tokEmbd(Input)
 
         # Adding both the embeddings and CNN output
-        x = PosEmbd + TokEmbd + CnnOutput
+        Input = PosEmbd + Input
 
         # applying decoder block
         for block in self.transformer.hid:
-            x = block(x)
+            Input = block(Input)
 
         # forward the final layernorm
-        x = self.transformer.layerNorm(x)
+        Input = self.transformer.layerNorm(Input)
+
+        # Passing image through Cnn Model
+        Img = self.cnnModel(Img)
+        Img = torch.reshape(Img,
+                            (BatchSize, SeqLen, self.config.nEmbd)) 
+
+        # Adding Image and input
+        Input = Input + Img
 
         # Classifying
-        logits = self.head(x)
+        logits = self.head(Input)
 
         # Calculating loss
         loss = None
