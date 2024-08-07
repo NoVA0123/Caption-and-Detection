@@ -203,7 +203,7 @@ def train(rank:int,
 
 
     # Loading caption data into dataloader
-    PadToken = tokenizer.token_to_id(['PAD'])
+    PadToken = tokenizer.token_to_id('[PAD]')
     CaptionDataClass = texttoid(TokenizedSentences,
                                 PadToken)
 
