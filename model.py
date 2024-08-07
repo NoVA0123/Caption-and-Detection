@@ -176,6 +176,7 @@ def train(rank:int,
     TokenizedSentences = WrappedTokenizer(text=TrainData['caption'].tolist(),
                                           return_tensors='pt',
                                           padding='max_length') 
+    TokenizedSentences = TokenizedSentences['input_ids']
 
 
     # Changing sample size
