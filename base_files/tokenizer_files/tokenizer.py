@@ -91,7 +91,7 @@ class texttoid:
         DecoderInput = self.tokenizer(text=row,
                                       padding='max_length',
                                       return_tensors='pt') # Tokenized sentence
-        DecoderInput = DecoderInput['input_ids']
+        DecoderInput = DecoderInput['input_ids'][0]
 
         # Label should 1 value ahead of input
         Label = torch.cat([
