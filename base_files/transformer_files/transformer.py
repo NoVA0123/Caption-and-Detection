@@ -2,7 +2,6 @@ import inspect
 import torch
 from torch import nn
 from base_files.transformer_files.decoder import block
-from torch.nn import functional as F
 
 
 class transformer(nn.Module):
@@ -91,7 +90,7 @@ class transformer(nn.Module):
                                       fused=UseFused)
         return Optimizer
 
-    def forward(self, Input, Img, Target=None):
+    def forward(self, Input, Img):
         # Input is of shape (BatchSize, SeqLen)
         BatchSize, SeqLen = Input.size()
         assert SeqLen <= self.config.blockSize, f"Cannot pass the sequence to the model, Error: length {SeqLen} is greater than the block size parameter for the model"
@@ -122,9 +121,4 @@ class transformer(nn.Module):
         # Classifying
         logits = self.head(Input)
 
-        # Calculating loss
-        loss = None
-        if Target is not None:
-            loss = F.cross_entropy(logits.view(-1, logits.size(-1)),
-                                   Target.view(-1))
-        return logits, loss
+        return logits

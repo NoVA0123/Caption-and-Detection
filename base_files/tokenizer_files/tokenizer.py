@@ -75,18 +75,24 @@ def get_all_sentences(dataset: pd.DataFrame):
 # Convert text to id class
 class texttoid:
     def __init__(self,
-                 TokenizedTensor,
-                 PadToken:int=1):
+                 tokenizer: PreTrainedTokenizerFast,
+                 dataset: pd.DataFrame):
 
-        self.tokenizedTensor = TokenizedTensor # Tokenized Tensor
-        self.padToken = torch.tensor([PadToken], dtype=torch.long) # Padding
+        self.dataset = dataset
+        self.tokenizer = tokenizer # Tokenized Tensor
+        self.padToken = tokenizer.convert_tokens_to_ids('[PAD]')
 
     def __len__(self):
-        return self.tokenizedTensor.size(0)
+        return len(self.dataset)
 
     def __getitem__(self, index) -> dict:
 
-        DecoderInput = self.tokenizedTensor[index] # Tokenized sentence
+        row = self.dataset['caption'][index]
+        DecoderInput = self.tokenizer(text=row,
+                                      padding='max_length',
+                                      return_tensors='pt') # Tokenized sentence
+        DecoderInput = DecoderInput['input_ids']
+
         # Label should 1 value ahead of input
         Label = torch.cat([
             DecoderInput[1:],

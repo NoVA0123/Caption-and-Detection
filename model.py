@@ -1,8 +1,8 @@
 import torch
 import time
 import os
-import pandas as pd
-from torch.autograd import backward
+import pandas
+from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 import json
@@ -173,18 +173,13 @@ def train(rank:int,
     WrappedTokenizer = fast_tokenizer(tokenizer=tokenizer,
                                        MaxSeqLen=MaxLen)
 
-    TokenizedSentences = WrappedTokenizer(text=TrainData['caption'].tolist(),
-                                          return_tensors='pt',
-                                          padding='max_length') 
-    TokenizedSentences = TokenizedSentences['input_ids']
-
 
     # Changing sample size
     TrainData = TrainData.sample(TotalSamples,
                                  random_state=1337).reset_index(drop=True)
-    TokenizedSentences = TokenizedSentences[:TotalSamples]
-    
 
+
+    # Creating config
     config = transformerconfig(blockSize=MaxLen,
                                vocabSize=VocabSize,
                                nLayers=NumLayers,
@@ -205,9 +200,8 @@ def train(rank:int,
 
 
     # Loading caption data into dataloader
-    PadToken = tokenizer.token_to_id('[PAD]')
-    CaptionDataClass = texttoid(TokenizedSentences,
-                                PadToken)
+    CaptionDataClass = texttoid(WrappedTokenizer,
+                                TrainData)
 
 
     if DistDataParallel:
@@ -246,8 +240,11 @@ def train(rank:int,
 
 
     # Adding grad scaler for mixed precision
-    Scaler = torch.cuda.amp.GradScaler()
-    UseScaler = True
+    if device_type == 'cuda':
+        Scaler = torch.cuda.amp.GradScaler()
+        UseScaler = True
+    else:
+        UseScaler = False
 
 
     if DistDataParallel:
@@ -332,16 +329,19 @@ def train(rank:int,
 
                         with torch.autocast(device_type=device_type,
                                         dtype=torch.bfloat16):
-                            _, loss = model(DecoderInput, img, Label)
+                            logits = model(DecoderInput, img, Label)
 
                     else:
                         with torch.autocast(device_type=device_type,
                                             dtype=torch.float16):
-                            _, loss = model(DecoderInput, img, Label)
+                            logits = model(DecoderInput, img, Label)
 
                 else:
-                    _, loss = model(DecoderInput, img, Label)
+                    logits = model(DecoderInput, img, Label)
 
+                loss = F.cross_entropy(logits.view(-1,
+                                                   logits.size(-1)),
+                                       Label.view(-1))
 
                 '''
                 To calculate Gradient accumulation for larger batches, we need
@@ -427,7 +427,7 @@ def train(rank:int,
                 print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} |Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
 
 
-    if DistDataParallel and rank == 0:
+    if DistDataParallel and rank == 0 and UseScaler:
 
         ModelName = 'caption_model.pt'
         torch.save({
@@ -438,7 +438,18 @@ def train(rank:int,
             'scaler': Scaler.state_dict()
             }, ModelName)
 
-    else:
+    elif DistDataParallel and rank == 0:
+
+        ModelName = 'caption_model.pt'
+        torch.save({
+            'epoch': Epochs,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'global_step': GlobalSteps
+            }, ModelName)
+
+    elif UseScaler:
+
         ModelName = 'caption_model.pt'
         torch.save({
             'epoch': Epochs,
@@ -446,6 +457,16 @@ def train(rank:int,
             'optimizer_state_dict': optimizer.state_dict(),
             'global_step': GlobalSteps,
             'scaler': Scaler.state_dict()
+            }, ModelName)
+
+    else: 
+
+        ModelName = 'caption_model.pt'
+        torch.save({
+            'epoch': Epochs,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'global_step': GlobalSteps
             }, ModelName)
 
 
