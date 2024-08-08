@@ -329,15 +329,15 @@ def train(rank:int,
 
                         with torch.autocast(device_type=device_type,
                                         dtype=torch.bfloat16):
-                            logits = model(DecoderInput, img, Label)
+                            logits = model(DecoderInput, img)
 
                     else:
                         with torch.autocast(device_type=device_type,
                                             dtype=torch.float16):
-                            logits = model(DecoderInput, img, Label)
+                            logits = model(DecoderInput, img)
 
                 else:
-                    logits = model(DecoderInput, img, Label)
+                    logits = model(DecoderInput, img)
 
                 loss = F.cross_entropy(logits.view(-1,
                                                    logits.size(-1)),
