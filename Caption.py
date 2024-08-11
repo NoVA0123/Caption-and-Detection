@@ -116,7 +116,7 @@ def CaptionGenerator(JsonPath:str,
 
         # forwarding the model
         with torch.no_grad():
-            logits, _ = model(XGen, img)
+            logits = model(XGen, img)
             # Take the logits at last position
             logits = logits[:, index-1, :]
             # Get the probablities
