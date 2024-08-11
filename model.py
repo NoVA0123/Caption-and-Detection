@@ -2,6 +2,7 @@ import torch
 import time
 import os
 import pandas
+from torch.cuda import is_bf16_supported
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
@@ -290,6 +291,8 @@ def train(rank:int,
         print(f"Total batch size is: {TotalBatchSize} ")
         print(f"-> calculated gradient accumulation steps: {GradAccumSteps}")
 
+    if torch.cuda.is_bf16_supported():
+        print("Using BFloat16")
 
     # Training
     GlobalSteps = 0
