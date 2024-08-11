@@ -27,11 +27,12 @@
     "model_config":{
         "batch_size": 256,
         "epochs": 8,
+        "use_float16": null
         "learning_rate":{
             "max_lr": 6e-4,
             "warmup_steps": 10,
             "max_steps": 50
-        }
+        },
     },
     "dataset_config": {
         "max_sample": 524288 

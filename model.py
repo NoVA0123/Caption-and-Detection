@@ -146,6 +146,7 @@ def train(rank:int,
     NumLayers = TrConf['number_layers']
     NumHeads = TrConf['number_heads']
     DModel = TrConf['d_model']
+    UseFloat16 = data['use_float16']
 
     # Sample Size
     TotalSamples = data['dataset_config']['max_sample']
@@ -240,7 +241,7 @@ def train(rank:int,
 
 
     # Adding grad scaler for mixed precision
-    if device_type == 'cuda':
+    if device_type == 'cuda' and UseFloat16 is not None:
         Scaler = torch.cuda.amp.GradScaler()
         UseScaler = True
     else:
@@ -423,7 +424,7 @@ def train(rank:int,
             if rank == 0 and not UseScaler:
                 print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} |{norm: .2f} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
 
-            elif rank == 0 and UseScaler:
+            else:
                 print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} |Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
 
 
