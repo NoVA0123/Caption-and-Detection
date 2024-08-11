@@ -146,7 +146,6 @@ def train(rank:int,
     NumLayers = TrConf['number_layers']
     NumHeads = TrConf['number_heads']
     DModel = TrConf['d_model']
-    UseFloat16 = data['use_float16']
 
     # Sample Size
     TotalSamples = data['dataset_config']['max_sample']
@@ -155,6 +154,7 @@ def train(rank:int,
     ModelConfig = data['model_config']
     BatchSize = ModelConfig['batch_size']
     Epochs = ModelConfig['epochs']
+    UseFloat16 = ModelConfig['use_float16']
 
     # Cnn Model parameters
     CnnConf = data['cnn_model_config']
