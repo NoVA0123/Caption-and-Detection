@@ -501,7 +501,7 @@ if __name__ == "__main__":
     JsonPath = command_line_argument()
     world_size = torch.cuda.device_count()
 
-    if world_size > 1:
+    if world_size > 1 and torch.cuda.is_available():
         mp.spawn(train,
                  args=(world_size, JsonPath.Path),
                  nprocs=world_size)
