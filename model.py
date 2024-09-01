@@ -108,19 +108,20 @@ def train(rank:int,
     else:
         try:
             device = xm.xla_device()
-            device_type = 'cuda'
+
         except:
             print("TPU not found, falling back to CPU")
+
         else:
             device = 'cpu'
 
-        # Use GPU if it is available
-        if torch.cuda.is_available():
-            device = 'cuda'
+            # Use GPU if it is available
+            if torch.cuda.is_available():
+                device = 'cuda'
 
-        # Use MPS if it is available(Apple devices only)
-        elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
-            device = 'mps'
+            # Use MPS if it is available(Apple devices only)
+            elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+                device = 'mps'
         
         device_type = device
         DistDataParallel = False
