@@ -2,6 +2,8 @@ import torch
 import time
 import os
 import pandas
+import torch_xla
+import torch_xla.core.xla_model as xm
 from torch.cuda import is_bf16_supported
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
@@ -104,7 +106,13 @@ def train(rank:int,
         DistDataParallel = True
 
     else:
-        device = 'cpu'
+        try:
+            device = xm.xla_device()
+            device_type = 'cuda'
+        except:
+            print("TPU not found, falling back to CPU")
+        else:
+            device = 'cpu'
 
         # Use GPU if it is available
         if torch.cuda.is_available():
