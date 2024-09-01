@@ -108,6 +108,7 @@ def train(rank:int,
     else:
         try:
             device = xm.xla_device()
+            bfloat16 = True
 
         except:
             print("TPU not found, falling back to CPU")
@@ -122,6 +123,8 @@ def train(rank:int,
             # Use MPS if it is available(Apple devices only)
             elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
                 device = 'mps'
+            
+            bflaot16 = False
         
         device_type = device
         DistDataParallel = False
@@ -300,9 +303,6 @@ def train(rank:int,
         print(f"Total batch size is: {TotalBatchSize} ")
         print(f"-> calculated gradient accumulation steps: {GradAccumSteps}")
 
-    if torch.cuda.is_bf16_supported():
-        print("Using BFloat16")
-
     # Training
     GlobalSteps = 0
     for i in tqdm(range(Epochs)):
@@ -336,9 +336,10 @@ def train(rank:int,
                 Autocasting to datatypes of model to bfloat16 as it is 4x
                 faster than normal float32. It reduces the decimal value.
                 '''
-                if device_type == 'cuda':
+                if device_type == 'cuda' or device_type == 'xla:0':
 
-                    if torch.cuda.is_bf16_supported():
+                    if bfloat16 or torch.cuda.is_bf16_supported():
+
 
                         with torch.autocast(device_type=device_type,
                                         dtype=torch.bfloat16):
