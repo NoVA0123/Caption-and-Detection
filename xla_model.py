@@ -1,3 +1,7 @@
+import torch_xla
+import torch_xla.runtime as xr
+import torch_xla.distributed.xla_backend
+import torch_xla.core.xla_model as xm
 import torch
 import time
 import os
@@ -38,7 +42,7 @@ def setup(rank:int,
     os.environ["MASTER_ADDR"] = 'localhost'
     os.environ['MASTER_PORT'] = '5674'
 
-    init_process_group(backend='nccl',
+    init_process_group(backend='xla',
                        rank=rank,
                        world_size=world_size)
 
@@ -96,28 +100,14 @@ def train(rank:int,
           ):
     
     # Check for multiple GPU's
+    new_rank = xr.gloabal_ordinal()
+    assert new_rank == rank
+    setup(rank=rank,# Current GPU id
+          world_size=world_size) # Total number of GPU's
+    device = xm.xla_device()
     if world_size > 1:
-        setup(rank=rank,# Current GPU id
-              world_size=world_size) # Total number of GPU's
-        device = rank
-        device_type = 'cuda'
         DistDataParallel = True
-
     else:
-    
-        device = 'cpu'
-
-        # Use GPU if it is available
-        if torch.cuda.is_available():
-            device = 'cuda'
-
-        # Use MPS if it is available(Apple devices only)
-        elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
-            device = 'mps'
-        
-        bflaot16 = False
-    
-        device_type = device
         DistDataParallel = False
 
 
@@ -158,7 +148,6 @@ def train(rank:int,
     ModelConfig = data['model_config']
     BatchSize = ModelConfig['batch_size']
     Epochs = ModelConfig['epochs']
-    UseFloat16 = ModelConfig['use_float16']
 
     # Cnn Model parameters
     CnnConf = data['cnn_model_config']
@@ -244,14 +233,6 @@ def train(rank:int,
     model = torch.compile(model)
 
 
-    # Adding grad scaler for mixed precision
-    if device_type == 'cuda' and UseFloat16 is not None:
-        Scaler = torch.cuda.amp.GradScaler()
-        UseScaler = True
-    else:
-        UseScaler = False
-
-
     if DistDataParallel:
         '''
         DDP function is neccessary for Distributive computing because, during
@@ -262,7 +243,7 @@ def train(rank:int,
         gradients of every GPU.
         '''
         model = DDP(model,
-                    device_ids=[device])
+                    gradient_as_bucket_view=True)
 
 
     # We need to create raw model for our configure optimizer to work properly
@@ -327,14 +308,11 @@ def train(rank:int,
                 Autocasting to datatypes of model to bfloat16 as it is 4x
                 faster than normal float32. It reduces the decimal value.
                 '''
-                if device_type == 'cuda' :
-
-                    with torch.autocast(device_type=device_type,
-                                        dtype=torch.float16):
-                        logits = model(DecoderInput, img)
-
-                else:
+                with torch.autocast(device_type=device,
+                                dtype=torch.bfloat16):
                     logits = model(DecoderInput, img)
+
+                logits = model(DecoderInput, img)
 
                 loss = F.cross_entropy(logits.view(-1,
                                                    logits.size(-1)),
@@ -370,9 +348,6 @@ def train(rank:int,
                 if DistDataParallel:
                     model.require_backward_grad_sync = (MicroSteps == GradAccumSteps - 1)
 
-                if UseScaler:
-                    Scaler.scale(loss).backward()
-
                 else:
                     loss.backward()
             
@@ -383,8 +358,7 @@ def train(rank:int,
                                 op=dist.ReduceOp.AVG)
 
             # Applying norm on gradients to reduce shock of the model
-            if not UseScaler:
-                norm = torch.nn.utils.clip_grad_norm(model.parameters(), 1.0)
+            norm = torch.nn.utils.clip_grad_norm(model.parameters(), 1.0)
             
             # Decay in learning rate
             lr = get_decay_lr(GlobalSteps,
@@ -396,12 +370,7 @@ def train(rank:int,
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
 
-            if not UseScaler:
-                optimizer.step() # Applying a backpropogation step
-
-            else:
-                Scaler.step(optimizer)
-                Scaler.update()
+            optimizer.step() # Applying a backpropogation step
 
             # Synchronizing GPU and CPU runtime
             torch.cuda.synchronize()
@@ -417,25 +386,11 @@ def train(rank:int,
             GlobalSteps += 1
             LocalSteps += 1
 
-            if rank == 0 and not UseScaler:
+            if rank == 0 :
                 print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} |{norm: .2f} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
 
-            else:
-                print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} |Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
 
-
-    if DistDataParallel and rank == 0 and UseScaler:
-
-        ModelName = 'caption_model.pt'
-        torch.save({
-            'epoch': Epochs,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'global_step': GlobalSteps,
-            'scaler': Scaler.state_dict()
-            }, ModelName)
-
-    elif DistDataParallel and rank == 0:
+    if DistDataParallel and rank == 0:
 
         ModelName = 'caption_model.pt'
         torch.save({
@@ -444,18 +399,6 @@ def train(rank:int,
             'optimizer_state_dict': optimizer.state_dict(),
             'global_step': GlobalSteps
             }, ModelName)
-
-    elif UseScaler:
-
-        ModelName = 'caption_model.pt'
-        torch.save({
-            'epoch': Epochs,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'global_step': GlobalSteps,
-            'scaler': Scaler.state_dict()
-            }, ModelName)
-
     else: 
 
         ModelName = 'caption_model.pt'
@@ -483,17 +426,8 @@ def command_line_argument():
 if __name__ == "__main__":
 
     JsonPath = command_line_argument()
-    world_size = torch.cuda.device_count()
+    world_size = xr.world_size()
 
-    if world_size > 1 and torch.cuda.is_available():
-        mp.spawn(train,
-                 args=(world_size, JsonPath.Path),
-                 nprocs=world_size)
+    if world_size > 1:
+        torch_xla.launch(train, args=(world_size, JsonPath.Path))
 
-    else:
-        rank = 0
-        world_size = 1
-
-        train(rank,
-              world_size,
-              JsonPath.Path)
