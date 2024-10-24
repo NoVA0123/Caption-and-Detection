@@ -40,7 +40,7 @@ def setup(rank:int,
           world_size:int):
 
     os.environ["MASTER_ADDR"] = 'localhost'
-    os.environ['MASTER_PORT'] = '5674'
+    os.environ['MASTER_PORT'] = '12355'
 
     init_process_group(backend='xla',
                        rank=rank,
@@ -105,10 +105,7 @@ def train(rank:int,
     setup(rank=rank,# Current GPU id
           world_size=world_size) # Total number of GPU's
     device = xm.xla_device()
-    if world_size > 1:
-        DistDataParallel = True
-    else:
-        DistDataParallel = False
+    DistDataParallel = True
 
 
     # Ignore warnings
@@ -428,6 +425,5 @@ if __name__ == "__main__":
     JsonPath = command_line_argument()
     world_size = xr.world_size()
 
-    if world_size > 1:
-        torch_xla.launch(train, args=(world_size, JsonPath.Path))
+    torch_xla.launch(train, args=(world_size, JsonPath.Path))
 
