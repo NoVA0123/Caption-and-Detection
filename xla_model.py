@@ -1,7 +1,8 @@
 import torch_xla
 import torch_xla.runtime as xr
 import torch_xla.distributed.xla_backend
-import torch_xla.core.xla_model as xm
+import torch_xla.distributed.xla_multiprocessing as xmp
+import torch.xla.core.xla_model as xm
 import torch
 import time
 import os
@@ -367,7 +368,7 @@ def train(rank:int,
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
 
-            optimizer.step() # Applying a backpropogation step
+            xm.optimizer.step() # Applying a backpropogation step
 
             # Synchronizing GPU and CPU runtime
             torch.cuda.synchronize()
@@ -390,7 +391,7 @@ def train(rank:int,
     if DistDataParallel and rank == 0:
 
         ModelName = 'caption_model.pt'
-        torch.save({
+        torch_xla.core.xla_model.save({
             'epoch': Epochs,
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
@@ -423,7 +424,7 @@ def command_line_argument():
 if __name__ == "__main__":
 
     JsonPath = command_line_argument()
-    world_size = xr.world_size()
+    world_size = torch_xla.device_count()
 
-    torch_xla.launch(train, args=(world_size, JsonPath.Path))
+    xmp.spawn(train, args=(world_size, JsonPath.Path))
 
