@@ -80,7 +80,7 @@ class transformer(nn.Module):
 
         # Check fused is available or not
         FusedAvailable = 'fused' in inspect.signature(torch.optim.AdamW).parameters
-        UseFused = FusedAvailable and 'cuda' in device
+        UseFused = FusedAvailable and (('cuda' in device) or ('xla' in device))
         print(f'Using fused AdamW: {UseFused}')
         # Configuring optimizer
         Optimizer = torch.optim.AdamW(OptimGroups,
