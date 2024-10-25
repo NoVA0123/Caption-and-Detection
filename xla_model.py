@@ -241,7 +241,7 @@ def train(rank:int,
         gradient with average. Easy way to understand: DDP synchronizes
         gradients of every GPU.
         '''
-        model = FSDP(model.module)
+        model = FSDP(model)
 
 
     # We need to create raw model for our configure optimizer to work properly
