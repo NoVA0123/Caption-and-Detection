@@ -23,6 +23,15 @@ from base_files.dataset_files.json_extracter import caption_extracter
 from base_files.dataset_files.image_extracter import imgextracter
 
 
+def is_bf16_supported():
+    try:
+        device = torch.device('cuda')
+        x = torch.tensor([1, 2], dtype=torch.bfloat16, device=device)
+        return True
+    except Exception as e:
+        print("bf16 is not supported")
+        return False
+
 
 def cpu_optimzer():
     N = os.cpu_count() # Counts number of cpu's
@@ -115,10 +124,10 @@ def train(rank:int,
         elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
             device = 'mps'
         
-        bflaot16 = False
-    
         device_type = device
         DistDataParallel = False
+
+    bf16 = is_bf16_supported()
 
 
     # Ignore warnings
@@ -126,109 +135,113 @@ def train(rank:int,
 
 
     # Setting null to None(for Json)
-    null = None
-    
+    if rank == 0:
+        null = None
+        
 
-    # Loading json
-    with open (JsonPath, 'r') as f:
-        data = json.load(f)
+        # Loading json
+        with open (JsonPath, 'r') as f:
+            data = json.load(f)
 
-    FilePath = data['file_path']
-    TrainJson = FilePath['json_path']['train_json']
-    TrainImgPath = FilePath['image_path']['train_path']
-    
-    # Extracting caption and storing corresponding image path
-    TrainData = caption_extracter(TrainJson, TrainImgPath)
-
-
-    '''Initializing Config parameters'''
-
-    # Initializing transformer config 
-    TrConf = data['transformer_config']
-    MaxLen = TrConf['block_size']
-    VocabSize = TrConf['vocab_size']
-    NumLayers = TrConf['number_layers']
-    NumHeads = TrConf['number_heads']
-    DModel = TrConf['d_model']
-
-    # Sample Size
-    TotalSamples = data['dataset_config']['max_sample']
-
-    # Initializing model hyper parameters
-    ModelConfig = data['model_config']
-    BatchSize = ModelConfig['batch_size']
-    Epochs = ModelConfig['epochs']
-    UseFloat16 = ModelConfig['use_float16']
-
-    # Cnn Model parameters
-    CnnConf = data['cnn_model_config']
-    ExistingPath = CnnConf['existing_path']
-    SpecificDownloadPath = CnnConf['specific_download_path']
+        FilePath = data['file_path']
+        TrainJson = FilePath['json_path']['train_json']
+        TrainImgPath = FilePath['image_path']['train_path']
+        
+        # Extracting caption and storing corresponding image path
+        TrainData = caption_extracter(TrainJson, TrainImgPath)
 
 
-    # Creating a tokenizer
-    if data['tokenizer_config']['tokenizer_save_path'] is null:
-        tokenizer = get_tokenizer(TrainData)
-    else:
-        tokenizer = get_tokenizer(TrainData,
-                                  data['tokenizer_config']['tokenizer_path'])
+        '''Initializing Config parameters'''
+
+        # Initializing transformer config 
+        TrConf = data['transformer_config']
+        MaxLen = TrConf['block_size']
+        VocabSize = TrConf['vocab_size']
+        NumLayers = TrConf['number_layers']
+        NumHeads = TrConf['number_heads']
+        DModel = TrConf['d_model']
+
+        # Sample Size
+        TotalSamples = data['dataset_config']['max_sample']
+
+        # Initializing model hyper parameters
+        ModelConfig = data['model_config']
+        BatchSize = ModelConfig['batch_size']
+        Epochs = ModelConfig['epochs']
+        if bf16:
+            UseFloat16 = False
+        else:
+            UseFloat16 = True
+
+        # Cnn Model parameters
+        CnnConf = data['cnn_model_config']
+        ExistingPath = CnnConf['existing_path']
+        SpecificDownloadPath = CnnConf['specific_download_path']
 
 
-    # Creating fast tokenizer
-    WrappedTokenizer = fast_tokenizer(tokenizer=tokenizer,
-                                       MaxSeqLen=MaxLen)
+        # Creating a tokenizer
+        if data['tokenizer_config']['tokenizer_save_path'] is null:
+            tokenizer = get_tokenizer(TrainData)
+        else:
+            tokenizer = get_tokenizer(TrainData,
+                                      data['tokenizer_config']['tokenizer_path'])
 
 
-    # Changing sample size
-    TrainData = TrainData.sample(TotalSamples,
-                                 random_state=1337).reset_index(drop=True)
+        # Creating fast tokenizer
+        WrappedTokenizer = fast_tokenizer(tokenizer=tokenizer,
+                                           MaxSeqLen=MaxLen)
 
 
-    # Creating config
-    config = transformerconfig(blockSize=MaxLen,
-                               vocabSize=VocabSize,
-                               nLayers=NumLayers,
-                               nHead=NumHeads,
-                               nEmbd=DModel)
-    
-
-    # Downloading the Cnn model
-    if ExistingPath is not None and SpecificDownloadPath is not None:
-        effnetv2s = get_cnn_model(MaxSeqLen=MaxLen,
-                                  DModel=DModel,
-                                  ExistingPath=ExistingPath,
-                                  SpecificDownloadPath=SpecificDownloadPath)
-
-    else:
-        effnetv2s = get_cnn_model(MaxSeqLen=MaxLen,
-                                  DModel=DModel)
+        # Changing sample size
+        TrainData = TrainData.sample(TotalSamples,
+                                     random_state=1337).reset_index(drop=True)
 
 
-    # Loading caption data into dataloader
-    CaptionDataClass = texttoid(WrappedTokenizer,
-                                TrainData)
+        # Creating config
+        config = transformerconfig(blockSize=MaxLen,
+                                   vocabSize=VocabSize,
+                                   nLayers=NumLayers,
+                                   nHead=NumHeads,
+                                   nEmbd=DModel)
+        
+
+        # Downloading the Cnn model
+        if ExistingPath is not None and SpecificDownloadPath is not None:
+            effnetv2s = get_cnn_model(MaxSeqLen=MaxLen,
+                                      DModel=DModel,
+                                      ExistingPath=ExistingPath,
+                                      SpecificDownloadPath=SpecificDownloadPath)
+
+        else:
+            effnetv2s = get_cnn_model(MaxSeqLen=MaxLen,
+                                      DModel=DModel)
 
 
-    if DistDataParallel:
-        CaptionData = parallel_data_sampler(rank=rank,
-                                            WorldSize=world_size,
-                                            dataset=CaptionDataClass,
-                                            batch_size=BatchSize)
-
-    else:
-        CaptionData = DataLoader(CaptionDataClass,
-                                 batch_size=BatchSize)
+        # Loading caption data into dataloader
+        CaptionDataClass = texttoid(WrappedTokenizer,
+                                    TrainData)
 
 
-    # Loading Image data into dataloader
-    ImgDataClass = imgextracter(dataframe=TrainData)
+        if DistDataParallel:
+            CaptionData = parallel_data_sampler(rank=rank,
+                                                WorldSize=world_size,
+                                                dataset=CaptionDataClass,
+                                                batch_size=BatchSize)
+
+        else:
+            CaptionData = DataLoader(CaptionDataClass,
+                                     batch_size=BatchSize)
+
+
+        # Loading Image data into dataloader
+        ImgDataClass = imgextracter(dataframe=TrainData)
 
 
     if DistDataParallel:
         ImgData = parallel_data_sampler(rank=rank,
-                                    WorldSize=world_size,
-                                    dataset=ImgDataClass,
-                                    batch_size=BatchSize)
+                                        WorldSize=world_size,
+                                        dataset=ImgDataClass,
+                                        batch_size=BatchSize)
 
     else:
         ImgData = DataLoader(ImgDataClass,
@@ -236,6 +249,8 @@ def train(rank:int,
 
 
     # Initializing the transformer model
+    if bf16:
+        torch.set_float32_matmul_precision('high')
     model = transformer(config=config,
                         CnnModel=effnetv2s)
     model.to(device) 
@@ -330,7 +345,7 @@ def train(rank:int,
                 if device_type == 'cuda' :
 
                     with torch.autocast(device_type=device_type,
-                                        dtype=torch.float16):
+                                        dtype=torch.bfloat16 if bf16 else torch.float16):
                         logits = model(DecoderInput, img)
 
                 else:
