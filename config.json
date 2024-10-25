@@ -22,12 +22,11 @@
         "vocab_size": 30080,
         "number_layers": 6,
         "number_heads": 6,
-        "d_model": 384
+        "d_model": 768 
     },
     "model_config":{
-        "batch_size": 1,
+        "batch_size": 16,
         "epochs": 8,
-        "use_float16": 1,
         "learning_rate":{
             "max_lr": 6e-4,
             "warmup_steps": 10,
@@ -35,7 +34,7 @@
         }
     },
     "dataset_config": {
-        "max_sample": 524288 
+        "max_sample": 81920
     },
     "saved_model_path":"/kaggle/input/captionmodel/pytorch/default/1/caption_model (2).pt"
 }
