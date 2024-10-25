@@ -3,6 +3,7 @@ import torch_xla.runtime as xr
 import torch_xla.distributed.xla_backend
 import torch_xla.distributed.xla_multiprocessing as xmp
 import torch_xla.core.xla_model as xm
+from torch_xla.distributed.fsdp import XlaFullyShardedDataParallel as FSDP
 import torch
 import time
 import os
@@ -240,8 +241,7 @@ def train(rank:int,
         gradient with average. Easy way to understand: DDP synchronizes
         gradients of every GPU.
         '''
-        model = DDP(model,
-                    gradient_as_bucket_view=True)
+        model = FSDP(model.module)
 
 
     # We need to create raw model for our configure optimizer to work properly
