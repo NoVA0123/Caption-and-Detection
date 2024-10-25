@@ -241,7 +241,8 @@ def train(rank:int,
         gradient with average. Easy way to understand: DDP synchronizes
         gradients of every GPU.
         '''
-        model = FSDP(model)
+        model = DDP(model,
+                    gradient_as_bucket_view=True)
 
 
     # We need to create raw model for our configure optimizer to work properly
@@ -343,11 +344,7 @@ def train(rank:int,
                 i.e. model will not converge(minimum loss) smoothly and will shock
                 the model.
                 '''
-                if DistDataParallel:
-                    model.require_backward_grad_sync = (MicroSteps == GradAccumSteps - 1)
-
-                else:
-                    loss.backward()
+                loss.backward()
             
 
             # Reduce gradients alltogther
