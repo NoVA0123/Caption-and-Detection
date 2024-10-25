@@ -423,6 +423,8 @@ def command_line_argument():
 # Running the model
 if __name__ == "__main__":
 
+    os.environ.pop("TPU_PROCESS_ADDRESSES")
+    os.environ.pop("CLOUD_TPU_TASK_ID")
     JsonPath = command_line_argument()
     world_size = 8
 
