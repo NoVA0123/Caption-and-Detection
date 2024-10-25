@@ -105,7 +105,7 @@ def train(rank:int,
     assert new_rank == rank
     setup(rank=rank,# Current GPU id
           world_size=world_size) # Total number of GPU's
-    device = xm.xla_device()
+    device = 'xla'
     DistDataParallel = True
 
 
