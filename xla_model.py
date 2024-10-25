@@ -424,7 +424,7 @@ def command_line_argument():
 if __name__ == "__main__":
 
     JsonPath = command_line_argument()
-    world_size = torch_xla.device_count()
+    world_size = 8
 
     xmp.spawn(train, args=(world_size, JsonPath.Path))
 
