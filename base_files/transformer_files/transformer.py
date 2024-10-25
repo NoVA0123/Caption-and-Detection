@@ -79,8 +79,11 @@ class transformer(nn.Module):
         print(f"Number of non decaying parameter tensors: {len(NonDecayParams)}, with {NumNonDecayParams} parameters")
 
         # Check fused is available or not
-        FusedAvailable = 'fused' in inspect.signature(torch.optim.AdamW).parameters
-        UseFused = FusedAvailable and (('cuda' in device) or ('xla' in device))
+        if 'cuda' in device:
+            FusedAvailable = 'fused' in inspect.signature(torch.optim.AdamW).parameters
+            UseFused = FusedAvailable 
+        else:
+            UseFused = False
         print(f'Using fused AdamW: {UseFused}')
         # Configuring optimizer
         Optimizer = torch.optim.AdamW(OptimGroups,
