@@ -101,7 +101,7 @@ def CaptionGenerator(JsonPath:str,
     CurrentTok = tokenizer.token_to_id('[SOS]')
     CaptionTokens = [CurrentTok]
     NumPadTok = MaxLen - len(CaptionTokens)
-    PaddingToken = [tokenizer.token_to_id('[EOS]')]
+    PaddingToken = [tokenizer.token_to_id('[PAD]')]
     XGen = torch.cat([torch.tensor(CaptionTokens, dtype=torch.long),
                       torch.tensor(PaddingToken * NumPadTok, dtype=torch.long)])
     XGen = XGen.unsqueeze(0)
