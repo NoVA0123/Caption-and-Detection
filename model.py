@@ -294,7 +294,7 @@ def train(rank:int,
 
 
     # Creating gradient accumulation step to increase batch size
-    TotalBatchSize = 2**20
+    TotalBatchSize = 2**19
     assert TotalBatchSize % (BatchSize * MaxLen * world_size) == 0, "Make sure the total batch size is divisible by Batch * SeqLen"
     GradAccumSteps = TotalBatchSize // (BatchSize * MaxLen * world_size)
     if rank == 0: # This will prevent displaying text multiple times
