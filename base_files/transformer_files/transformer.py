@@ -99,12 +99,17 @@ class transformer(nn.Module):
         assert SeqLen <= self.config.blockSize, f"Cannot pass the sequence to the model, Error: length {SeqLen} is greater than the block size parameter for the model"
 
         # Applying embeddings and tokenization
+        # Passing image through Cnn Model
+        Img = self.cnnModel(Img)
+        Img = torch.reshape(Img,
+                            (BatchSize, SeqLen, self.config.nEmbd)) 
+
         Pos = torch.arange(0, SeqLen, dtype=torch.int, device=Input.device)
         PosEmbd = self.transformer.posEmbd(Pos)
         Input = self.transformer.tokEmbd(Input)
 
         # Adding both the embeddings and CNN output
-        Input = PosEmbd + Input
+        Input = PosEmbd + Input + Img
 
         # applying decoder block
         for block in self.transformer.hid:
@@ -113,10 +118,6 @@ class transformer(nn.Module):
         # forward the final layernorm
         Input = self.transformer.layerNorm(Input)
 
-        # Passing image through Cnn Model
-        Img = self.cnnModel(Img)
-        Img = torch.reshape(Img,
-                            (BatchSize, SeqLen, self.config.nEmbd)) 
 
         # Adding Image and input
         Input = Input + Img
