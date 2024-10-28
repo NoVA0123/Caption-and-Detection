@@ -58,7 +58,7 @@ def fast_tokenizer(tokenizer:Tokenizer,
 
     return PreTrainedTokenizerFast(tokenizer_object=tokenizer,
                                    unk_token='[UNK]',
-                                   pad_token='[PAD]',
+                                   pad_token='[EOS]',
                                    bos_token='[SOS]', # Begining of sentence
                                    eos_token='[EOS]',
                                    padding_side='right',

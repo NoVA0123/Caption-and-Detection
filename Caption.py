@@ -14,7 +14,8 @@ from base_files.cnn_model_files.cnn_model import get_cnn_model
 
 @torch.no_grad()
 def CaptionGenerator(JsonPath:str,
-                     ImgPath: str):
+                     ImgPath: str,
+                     ModelPath: str):
 
     device = 'cpu'
 
@@ -86,7 +87,7 @@ def CaptionGenerator(JsonPath:str,
                         CnnModel=effnetv2s)
 
     # Loading checkpoint
-    checkpoint = torch.load(data["saved_model_path"])
+    checkpoint = torch.load(ModelPath)
     state_dict = checkpoint['model_state_dict']
     for key in list(state_dict.keys()):
         state_dict[key.replace("module._orig_mod.", "")] = state_dict.pop(key)
@@ -100,7 +101,7 @@ def CaptionGenerator(JsonPath:str,
     CurrentTok = tokenizer.token_to_id('[SOS]')
     CaptionTokens = [CurrentTok]
     NumPadTok = MaxLen - len(CaptionTokens)
-    PaddingToken = [tokenizer.token_to_id('[PAD]')]
+    PaddingToken = [tokenizer.token_to_id('[EOS]')]
     XGen = torch.cat([torch.tensor(CaptionTokens, dtype=torch.long),
                       torch.tensor(PaddingToken * NumPadTok, dtype=torch.long)])
     XGen = XGen.unsqueeze(0)
