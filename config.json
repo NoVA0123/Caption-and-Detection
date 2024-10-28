@@ -36,5 +36,6 @@
     "dataset_config": {
         "max_sample": 65536
     },
-    "saved_model_path":"/kaggle/input/caption-model/pytorch/default/1/caption_model.pt"
+    "saved_model_path":"/kaggle/input/caption-model/pytorch/default/1/caption_model.pt",
+    "test": 1,
 }

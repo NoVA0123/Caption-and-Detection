@@ -282,6 +282,7 @@ def train(rank:int,
     MinLr = MaxLr * 0.1
     WarmupSteps = ModelConfig['learning_rate']['warmup_steps']
     MaxSteps = ModelConfig['learning_rate']['max_steps']
+    test = ModelConfig['test']
 
     '''optimizer = torch.optim.AdamW(model.parameters(),
                                   lr=MaxLr,
@@ -308,7 +309,10 @@ def train(rank:int,
 
         LocalSteps = 0
 
-        for _ in range(len(ImgData)//GradAccumSteps):
+        TrainRange = len(ImgData)//GradAccumSteps
+        if test:
+            TrainRange = 10
+        for _ in range(TrainRange):
             t0 = time.time() # Storing time of begining of the step
 
             optimizer.zero_grad(set_to_none=True) # Setting optimizer to zero for every step
