@@ -18,7 +18,7 @@
         "tokenizer_load_path": "/kaggle/working/Caption-and-Detection/tokenizer.json"
     },
     "transformer_config":{
-        "block_size": 256,
+        "block_size": 128,
         "vocab_size": 30080,
         "number_layers": 6,
         "number_heads": 6,
