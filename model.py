@@ -6,6 +6,7 @@ from torch.cuda import is_bf16_supported
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
+from torch.utils.tensorboard import SummaryWriter
 import json
 from tqdm.auto import tqdm
 from argparse import ArgumentParser
@@ -301,6 +302,9 @@ def train(rank:int,
         print(f"Total batch size is: {TotalBatchSize} ")
         print(f"-> calculated gradient accumulation steps: {GradAccumSteps}")
 
+    # Tensorboard
+    writer = SummaryWriter()
+
     # Training
     GlobalSteps = 0
     for i in tqdm(range(Epochs)):
@@ -430,9 +434,12 @@ def train(rank:int,
             if rank == 0 and not UseScaler:
                 print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} |{norm: .2f} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
 
-            else:
+            elif rank == 0:
                 print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} |Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
 
+            writer.flush()
+
+    writer.close()
 
     if DistDataParallel and rank == 0 and UseScaler:
 
