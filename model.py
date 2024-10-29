@@ -316,7 +316,7 @@ def train(rank:int,
 
         TrainRange = len(ImgData)//GradAccumSteps
         if test:
-            TrainRange = 10
+            TrainRange = 4
         for _ in range(TrainRange):
             t0 = time.time() # Storing time of begining of the step
 
