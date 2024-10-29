@@ -306,6 +306,7 @@ def train(rank:int,
     writer = SummaryWriter()
 
     # Training
+    TimeTaken = 0
     GlobalSteps = 0
     for i in tqdm(range(Epochs)):
         IterImgData = iter(ImgData)
@@ -437,9 +438,14 @@ def train(rank:int,
             elif rank == 0:
                 print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} |Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
 
-            writer.flush()
+            writer.add_scalar('Training Loss', LossAccum.item(), global_step=GlobalSteps)
+            TimeTaken += dt*1000
+            writer.add_scaler("Training Time", TimeTaken, global_step=GlobalSteps)
 
+    ListOfWords = list(WrappedTokenizer.vocab.keys())
+    writer.add_embedding(model.transformer.tokEmbd.weights, metadata=ListOfWords)
     writer.close()
+    
 
     if DistDataParallel and rank == 0 and UseScaler:
 
