@@ -440,7 +440,7 @@ def train(rank:int,
 
             writer.add_scalar('Training Loss', LossAccum.item(), global_step=GlobalSteps)
             TimeTaken += dt*1000
-            writer.add_scaler("Training Time", TimeTaken, global_step=GlobalSteps)
+            writer.add_scalar("Training Time", TimeTaken, global_step=GlobalSteps)
 
     ListOfWords = list(WrappedTokenizer.vocab.keys())
     writer.add_embedding(model.transformer.tokEmbd.weights, metadata=ListOfWords)
