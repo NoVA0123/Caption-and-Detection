@@ -443,7 +443,11 @@ def train(rank:int,
             writer.add_scalar("Training Time", TimeTaken, global_step=GlobalSteps)
 
     ListOfWords = list(WrappedTokenizer.vocab.keys())
-    writer.add_embedding(model.transformer.tokEmbd.weights, metadata=ListOfWords)
+    if DistDataParallel:
+        writer.add_embedding(model.module.transformer.tokEmbd.weights, metadata=ListOfWords)
+    else:
+        writer.add_embedding(model.transformer.tokEmbd.weights, metadata=ListOfWords)
+
     writer.close()
     
 
