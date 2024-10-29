@@ -444,9 +444,9 @@ def train(rank:int,
 
     ListOfWords = list(WrappedTokenizer.vocab.keys())
     if DistDataParallel:
-        writer.add_embedding(model.module.transformer.tokEmbd.weights, metadata=ListOfWords)
+        writer.add_embedding(model.module.transformer.tokEmbd.weight, metadata=ListOfWords)
     else:
-        writer.add_embedding(model.transformer.tokEmbd.weights, metadata=ListOfWords)
+        writer.add_embedding(model.transformer.tokEmbd.weight, metadata=ListOfWords)
 
     writer.close()
     
