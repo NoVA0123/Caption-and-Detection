@@ -439,6 +439,7 @@ def train(rank:int,
                 print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} |Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
 
             writer.add_scalar('Training Loss', LossAccum.item(), global_step=GlobalSteps)
+            writer.add_scalar('Training Time Per Step', dt * 1000, global_step=GlobalSteps)
             TimeTaken += dt*1000
             writer.add_scalar("Training Time", TimeTaken, global_step=GlobalSteps)
 
