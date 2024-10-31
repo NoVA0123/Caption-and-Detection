@@ -11,9 +11,11 @@ class imgextracter(torch.utils.data.Dataset):
         self.dataframe = dataframe
         # Image transformation
         self.transform = v2.Compose([
-            v2.ToDtype(torch.float, scale=True),
-            v2.Resize(size=[224,224]),
-            v2.Normalize(mean=[0,0,0], std=[1,1,1])
+            v2.Resize(size=[489,456], antialias=True),
+            v2.RandomRotation(degrees=(0,180)),
+            v2.CenterCrop(456),
+            v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            v2.ToDtype(torch.float, scale=True)
             ])
         self.transform = self.transform.to(device)
 

@@ -14,21 +14,21 @@ def get_cnn_model(MaxSeqLen:int,
         os.environ['TORCH_HOME'] = SpecificDownloadPath
 
     # Loading the model
-    effnetv2s = models.efficientnet_v2_s(pretrained=True)
+    effnetb5 = models.efficientnet_b5(pretrained=True)
 
     # Extracting number of perceptrons from last layer
-    NumFeatures = effnetv2s.classifier[1].in_features
+    NumFeatures = effnetb5.classifier[1].in_features
 
     # Freezing every parameter except last
-    for params in effnetv2s.parameters():
+    for params in effnetb5.parameters():
         params.requires_grad = False
 
-    effnetv2s.classifier[1] = nn.Linear(NumFeatures,
+    effnetb5.classifier[1] = nn.Linear(NumFeatures,
                                         MaxSeqLen * DModel)
 
     if ExistingPath is not None and os.path.exists(ExistingPath):
         weights = torch.load(ExistingPath)
-        effnetv2s.load_state_dict(weights)
+        effnetb5.load_state_dict(weights)
 
 
-    return effnetv2s
+    return effnetb5
