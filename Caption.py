@@ -129,6 +129,7 @@ def CaptionGenerator(JsonPath:str,
         DecodedValues.append(decoded)
 
     return DecodedValues'''
+    XGen = XGen[0].tolist()
     Decoded = tokenizer.decode(XGen)
     print(f"Caption: {Decoded} \n {XGen}")
     return Decoded
