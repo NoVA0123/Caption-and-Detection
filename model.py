@@ -199,14 +199,12 @@ def train(rank:int,
 
     # Downloading the Cnn model
     if ExistingPath is not None and SpecificDownloadPath is not None:
-        effnetv2s = get_cnn_model(MaxSeqLen=MaxLen,
-                                  DModel=DModel,
+        effnetv2s = get_cnn_model(DModel=DModel,
                                   ExistingPath=ExistingPath,
                                   SpecificDownloadPath=SpecificDownloadPath)
 
     else:
-        effnetv2s = get_cnn_model(MaxSeqLen=MaxLen,
-                                  DModel=DModel)
+        effnetv2s = get_cnn_model(DModel=DModel)
 
 
     # Loading caption data into dataloader

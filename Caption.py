@@ -74,13 +74,11 @@ def CaptionGenerator(JsonPath:str,
     ExistingPath = CnnConf['existing_path']
     SpecificDownloadPath = CnnConf['specific_download_path']
     if ExistingPath is not None and SpecificDownloadPath is not None:
-        effnetv2s = get_cnn_model(MaxSeqLen=MaxLen,
-                                  DModel=DModel,
+        effnetv2s = get_cnn_model(DModel=DModel,
                                   ExistingPath=ExistingPath,
                                   SpecificDownloadPath=SpecificDownloadPath)
     else:
-        effnetv2s = get_cnn_model(MaxSeqLen=MaxLen,
-                                  DModel=DModel)
+        effnetv2s = get_cnn_model(DModel=DModel)
 
 
     # Initializing the transformer model
@@ -119,10 +117,7 @@ def CaptionGenerator(JsonPath:str,
         ix = torch.multinomial(probs, num_samples=1, generator=SampleRng) # (B, 1)
 
         # gather the corresponding indices
-
-        CaptionTokens.append(CurrentTok)
-        index = len(CaptionTokens)
-        XGen[0, index-1] = CaptionTokens[-1]
+        XGen = torch.cat((XGen, ix), dim=1)
 
     # Print the text which has been generated
     '''DecodedValues = []
@@ -134,8 +129,8 @@ def CaptionGenerator(JsonPath:str,
         DecodedValues.append(decoded)
 
     return DecodedValues'''
-    Decoded = tokenizer.decode(CaptionTokens)
-    print(f"Caption: {Decoded} \n {CaptionTokens}")
+    Decoded = tokenizer.decode(XGen)
+    print(f"Caption: {Decoded} \n {XGen}")
     return Decoded
 
 
