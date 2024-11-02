@@ -105,7 +105,7 @@ def CaptionGenerator(JsonPath:str,
     img = img.to(device)
     SampleRng = torch.Generator(device=device)
     SampleRng.manual_seed(1337)
-    for _ in range(512):
+    for _ in range(64):
 
         # forwarding the model
         logits = model(XGen, img)
