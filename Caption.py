@@ -44,10 +44,11 @@ def CaptionGenerator(JsonPath:str,
 
     # Creating a transform image object
     transform = v2.Compose([
-        v2.ToDtype(torch.float, scale=True), # Scale the image
-        v2.Resize(size=[224, 224]), # Resisze for the model
-        v2.Normalize(mean=[0, 0, 0], std=[1, 1, 1]), # Normalize values
-        v2.ToDtype(torch.float) # change it back to float
+        v2.Resize(size=[489,456], antialias=True),
+        v2.ToDtype(torch.float, scale=True),
+        v2.RandomRotation(degrees=(0,180)),
+        v2.CenterCrop(456),
+        v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
 
     # Reading the image and transforming the image
@@ -87,7 +88,7 @@ def CaptionGenerator(JsonPath:str,
                         CnnModel=effnetv2s)
 
     print(model)
-    '''# Loading checkpoint
+    # Loading checkpoint
     checkpoint = torch.load(ModelPath)
     state_dict = checkpoint['model_state_dict']
     for key in list(state_dict.keys()):
@@ -135,7 +136,7 @@ def CaptionGenerator(JsonPath:str,
             index = len(CaptionTokens)
             XGen[0, index-1] = CaptionTokens[-1]
 
-    # Print the text which has been generated'''
+    # Print the text which has been generated
     '''DecodedValues = []
     for i in range(NumReturnSequences):
 
@@ -145,9 +146,9 @@ def CaptionGenerator(JsonPath:str,
         DecodedValues.append(decoded)
 
     return DecodedValues'''
-    """Decoded = tokenizer.decode(CaptionTokens)
+    Decoded = tokenizer.decode(CaptionTokens)
     print(f"Caption: {Decoded} \n {CaptionTokens}")
-    return Decoded"""
+    return Decoded
 
 
 # Argument parser
