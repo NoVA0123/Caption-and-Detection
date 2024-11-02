@@ -4,8 +4,7 @@ from torchvision import models
 import os
 
 
-def get_cnn_model(MaxSeqLen:int,
-                  DModel:int=512,
+def get_cnn_model(DModel:int=512,
                   ExistingPath=None,
                   SpecificDownloadPath=None):
 
@@ -24,7 +23,7 @@ def get_cnn_model(MaxSeqLen:int,
         params.requires_grad = False
 
     effnetb5.classifier[1] = nn.Linear(NumFeatures,
-                                        MaxSeqLen * DModel)
+                                       DModel)
 
     if ExistingPath is not None and os.path.exists(ExistingPath):
         weights = torch.load(ExistingPath)

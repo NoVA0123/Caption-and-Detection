@@ -102,7 +102,7 @@ class transformer(nn.Module):
         # Passing image through Cnn Model
         Img = self.cnnModel(Img)
         Img = torch.reshape(Img,
-                            (BatchSize, SeqLen, self.config.nEmbd)) 
+                            (BatchSize, 1, self.config.nEmbd)) 
 
         Pos = torch.arange(0, SeqLen, dtype=torch.int, device=Input.device)
         PosEmbd = self.transformer.posEmbd(Pos)

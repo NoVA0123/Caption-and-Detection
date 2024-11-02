@@ -86,8 +86,6 @@ def CaptionGenerator(JsonPath:str,
     # Initializing the transformer model
     model = transformer(config=config,
                         CnnModel=effnetv2s)
-
-    print(model)
     # Loading checkpoint
     checkpoint = torch.load(ModelPath)
     state_dict = checkpoint['model_state_dict']
@@ -101,40 +99,30 @@ def CaptionGenerator(JsonPath:str,
     model.eval()
     # NumReturnSequences = 4
     CurrentTok = tokenizer.token_to_id('[SOS]')
-    CaptionTokens = [CurrentTok]
-    NumPadTok = MaxLen - len(CaptionTokens)
-    PaddingToken = [tokenizer.token_to_id('[PAD]')]
-    XGen = torch.cat([torch.tensor(CaptionTokens, dtype=torch.long),
-                      torch.tensor(PaddingToken * NumPadTok, dtype=torch.long)])
+    XGen = torch.tensor([CurrentTok], dtype=torch.long)
     XGen = XGen.unsqueeze(0)
     XGen = XGen.to(device)
 
     img = img.unsqueeze(0)#.repeat(NumReturnSequences, 1, 1)
     img = img.to(device)
     SampleRng = torch.Generator(device=device)
-    SampleRng.manual_seed(42)
-    index = len(CaptionTokens)
-    while index < MaxLen and CurrentTok != tokenizer.token_to_id('[EOS]'):
-
+    SampleRng.manual_seed(1337)
+    for _ in range(512):
 
         # forwarding the model
-        with torch.no_grad():
-            logits = model(XGen, img)
-            # Take the logits at last position
-            logits = logits[:, index-1, :]
-            # Get the probablities
-            probs = F.softmax(logits, dim=-1)
-            # TopK sampling
-            TopkProbs, TopkIndices = torch.topk(probs, 50, dim=-1)
-            ix = torch.multinomial(TopkProbs, 1, generator=SampleRng) # (B, 1)
+        logits = model(XGen, img)
+        # Take the logits at last position
+        logits = logits[:, -1, :]
+        # Get the probablities
+        probs = F.softmax(logits, dim=-1)
+        # TopK sampling
+        ix = torch.multinomial(probs, num_samples=1, generator=SampleRng) # (B, 1)
 
-            # gather the corresponding indices
+        # gather the corresponding indices
 
-            xcol = torch.gather(TopkIndices, -1, ix) # (B, 1)
-            CurrentTok = int(xcol)
-            CaptionTokens.append(CurrentTok)
-            index = len(CaptionTokens)
-            XGen[0, index-1] = CaptionTokens[-1]
+        CaptionTokens.append(CurrentTok)
+        index = len(CaptionTokens)
+        XGen[0, index-1] = CaptionTokens[-1]
 
     # Print the text which has been generated
     '''DecodedValues = []
