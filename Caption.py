@@ -86,7 +86,8 @@ def CaptionGenerator(JsonPath:str,
     model = transformer(config=config,
                         CnnModel=effnetv2s)
 
-    # Loading checkpoint
+    print(model)
+    '''# Loading checkpoint
     checkpoint = torch.load(ModelPath)
     state_dict = checkpoint['model_state_dict']
     for key in list(state_dict.keys()):
@@ -134,7 +135,7 @@ def CaptionGenerator(JsonPath:str,
             index = len(CaptionTokens)
             XGen[0, index-1] = CaptionTokens[-1]
 
-    # Print the text which has been generated
+    # Print the text which has been generated'''
     '''DecodedValues = []
     for i in range(NumReturnSequences):
 
@@ -144,9 +145,9 @@ def CaptionGenerator(JsonPath:str,
         DecodedValues.append(decoded)
 
     return DecodedValues'''
-    Decoded = tokenizer.decode(CaptionTokens)
+    """Decoded = tokenizer.decode(CaptionTokens)
     print(f"Caption: {Decoded} \n {CaptionTokens}")
-    return Decoded
+    return Decoded"""
 
 
 # Argument parser
