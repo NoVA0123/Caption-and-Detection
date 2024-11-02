@@ -18,10 +18,6 @@ def get_cnn_model(DModel:int=512,
     # Extracting number of perceptrons from last layer
     NumFeatures = effnetb5.classifier[1].in_features
 
-    # Freezing every parameter except last
-    for params in effnetb5.parameters():
-        params.requires_grad = False
-
     effnetb5.classifier[1] = nn.Linear(NumFeatures,
                                        DModel)
 
