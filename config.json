@@ -18,7 +18,7 @@
         "tokenizer_load_path": "/kaggle/working/Caption-and-Detection/tokenizer.json"
     },
     "transformer_config":{
-        "block_size": 512,
+        "block_size": 64,
         "vocab_size": 30080,
         "number_layers": 6,
         "number_heads": 6,
@@ -26,7 +26,7 @@
     },
     "model_config":{
         "batch_size": 4,
-        "epochs": 6,
+        "epochs": 1,
         "learning_rate":{
             "max_lr": 6e-4,
             "warmup_steps": 10,
