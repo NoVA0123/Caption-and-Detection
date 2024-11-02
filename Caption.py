@@ -118,6 +118,8 @@ def CaptionGenerator(JsonPath:str,
 
         # gather the corresponding indices
         XGen = torch.cat((XGen, ix), dim=1)
+        if ix[0] == 3:
+            break
 
     # Print the text which has been generated
     '''DecodedValues = []

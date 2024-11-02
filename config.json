@@ -25,8 +25,8 @@
         "d_model": 384
     },
     "model_config":{
-        "batch_size": 8,
-        "epochs": 12,
+        "batch_size": 16,
+        "epochs": 6,
         "learning_rate":{
             "max_lr": 6e-4,
             "warmup_steps": 10,
