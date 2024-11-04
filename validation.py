@@ -45,7 +45,7 @@ def validation(ImgPath:str,
     '''Creating caption for Image'''
     model.eval()
     # NumReturnSequences = 4
-    CurrentTok = tokenizer.token_to_id('[SOS]')
+    CurrentTok = tokenizer.token_to_id('<|start_of_text|>')
     XGen = torch.tensor([CurrentTok], dtype=torch.long)
     XGen = XGen.unsqueeze(0)
     XGen = XGen.to(device)
@@ -54,7 +54,7 @@ def validation(ImgPath:str,
     img = img.to(device)
     SampleRng = torch.Generator(device=device)
     SampleRng.manual_seed(1337)
-    for _ in range(64):
+    for _ in range(256):
 
         # forwarding the model
         logits = model(XGen, img)
@@ -67,9 +67,8 @@ def validation(ImgPath:str,
 
         # gather the corresponding indices
         XGen = torch.cat((XGen, ix), dim=1)
-        if ix[0] == 3:
+        if ix[0] == 1:
             break
 
-    XGen = XGen[0].tolist()
-    Decoded = tokenizer.decode(XGen)
+    Decoded = tokenizer.decode(XGen[0])
     print(f"Caption: {Decoded}")
