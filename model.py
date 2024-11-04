@@ -447,7 +447,7 @@ def train(rank:int,
             if rank == 0:
                 with torch.no_grad():
                     validation(TestImgPath,
-                               tokenizer,
+                               WrappedTokenizer,
                                model)
 
     writer.close()
