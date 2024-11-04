@@ -77,7 +77,7 @@ class texttoid:
 
     def __getitem__(self, index) -> dict:
 
-        row = self.dataset['caption'][index]
+        row = "<|start_of_text|>" + self.dataset['caption'][index] + "<|end_of_text|>"
         DecoderInput = self.tokenizer(text=row,
                                       padding='max_length',
                                       return_tensors='pt') # Tokenized sentence

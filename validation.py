@@ -70,5 +70,5 @@ def validation(ImgPath:str,
         if ix[0] == 1:
             break
 
-    Decoded = tokenizer.decode(XGen[0])
+    Decoded = tokenizer.decode(XGen[0], skip_special_tokens=True)
     print(f"Caption: {Decoded}")
