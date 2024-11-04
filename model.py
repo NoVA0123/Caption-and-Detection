@@ -22,6 +22,7 @@ from base_files.cnn_model_files.cnn_model import get_cnn_model
 from base_files.tokenizer_files.tokenizer import get_tokenizer, texttoid, fast_tokenizer
 from base_files.dataset_files.json_extracter import caption_extracter
 from base_files.dataset_files.image_extracter import imgextracter
+from validation import validation
 
 
 def is_bf16_supported():
@@ -138,6 +139,7 @@ def train(rank:int,
     FilePath = data['file_path']
     TrainJson = FilePath['json_path']['train_json']
     TrainImgPath = FilePath['image_path']['train_path']
+    TestImgPath = FilePath['image_path']['test_image_path']
     
     # Extracting caption and storing corresponding image path
     TrainData = caption_extracter(TrainJson, TrainImgPath)
@@ -199,12 +201,12 @@ def train(rank:int,
 
     # Downloading the Cnn model
     if ExistingPath is not None and SpecificDownloadPath is not None:
-        effnetv2s = get_cnn_model(DModel=DModel,
+        efficient5 = get_cnn_model(DModel=DModel,
                                   ExistingPath=ExistingPath,
                                   SpecificDownloadPath=SpecificDownloadPath)
 
     else:
-        effnetv2s = get_cnn_model(DModel=DModel)
+        efficient5 = get_cnn_model(DModel=DModel)
 
 
     # Loading caption data into dataloader
@@ -242,7 +244,7 @@ def train(rank:int,
     if bf16:
         torch.set_float32_matmul_precision('high')
     model = transformer(config=config,
-                        CnnModel=effnetv2s)
+                        CnnModel=efficient5)
     model.to(device) 
 
     # To compile model and make model faster
@@ -440,6 +442,13 @@ def train(rank:int,
             writer.add_scalar('Training Time Per Step', dt * 1000, global_step=GlobalSteps)
             TimeTaken += dt*1000
             writer.add_scalar("Training Time", TimeTaken, global_step=GlobalSteps)
+
+
+            if rank == 0:
+                with torch.no_grad():
+                    validation(TestImgPath,
+                               tokenizer,
+                               model)
 
     writer.close()
     

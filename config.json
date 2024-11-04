@@ -6,7 +6,8 @@
         },
         "image_path":{
             "train_path": "/kaggle/input/coco-dataset/train2017/train2017/",
-            "validation_path": "/kaggle/input/coco-dataset/val2017/val2017/"
+            "validation_path": "/kaggle/input/coco-dataset/val2017/val2017/",
+            "test_image_path": "/kaggle/input/coco-dataset/val2017/val2017/000000000139.jpg"
         }
     },
     "cnn_model_config":{
