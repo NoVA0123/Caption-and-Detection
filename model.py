@@ -448,8 +448,8 @@ def train(rank:int,
                     cap_text = validation(TestImgPath,
                                           WrappedTokenizer,
                                           model)
-            with open("validation_output.txt", 'a') as f:
-                f.write(cap_text + "\n")
+                with open("validation_output.txt", 'a') as f:
+                    f.write(cap_text + "\n")
 
     writer.close()
     
