@@ -131,7 +131,6 @@ def train(rank:int,
     # Setting null to None(for Json)
     null = None
     
-
     # Loading json
     with open (JsonPath, 'r') as f:
         data = json.load(f)
@@ -446,9 +445,11 @@ def train(rank:int,
 
             if rank == 0:
                 with torch.no_grad():
-                    validation(TestImgPath,
-                               WrappedTokenizer,
-                               model)
+                    cap_text = validation(TestImgPath,
+                                          WrappedTokenizer,
+                                          model)
+            with open("validation_output.txt", 'a') as f:
+                f.write(cap_text)
 
     writer.close()
     
