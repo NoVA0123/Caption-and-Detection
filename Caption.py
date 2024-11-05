@@ -96,7 +96,7 @@ def CaptionGenerator(JsonPath:str,
     '''Creating caption for Image'''
     model.eval()
     # NumReturnSequences = 4
-    CurrentTok = tokenizer.token_to_id('<|start_of_text')
+    CurrentTok = tokenizer.token_to_id('<|start_of_text|>')
     XGen = torch.tensor([CurrentTok], dtype=torch.long)
     XGen = XGen.unsqueeze(0)
     XGen = XGen.to(device)
