@@ -23,7 +23,7 @@
         "vocab_size": 30080,
         "number_layers": 12,
         "number_heads": 12,
-        "d_model": 128
+        "d_model": 96
     },
     "model_config":{
         "batch_size": 16,
