@@ -109,11 +109,11 @@ class transformer(nn.Module):
         Input = self.transformer.tokEmbd(Input)
 
         # Adding both the embeddings and CNN output
-        Input = PosEmbd + Input + Img
+        Input = PosEmbd + Input #+ Img
 
         # applying decoder block
         for block in self.transformer.hid:
-            Input = block(Input)
+            Input = block(Input, Img)
 
         # forward the final layernorm
         Input = self.transformer.layerNorm(Input)

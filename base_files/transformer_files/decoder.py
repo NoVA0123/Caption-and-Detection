@@ -14,7 +14,7 @@ class block(nn.Module):
         self.fFN = ffn(config) # feed forward network
 
 
-    def forward(self, x):
+    def forward(self, x, CnnImg):
         '''
         Step-1: Input -> LayerNorm -> Casual Attention = Modified input
         Step-2: Input + Modified input = Input
@@ -22,6 +22,7 @@ class block(nn.Module):
                                       Perceptron = Modified Input 
         Step-4: Input + Modified input = Decoder output
         '''
-        x = x + self.attn(self.layerNorm1(x))
+        # x = x + self.attn(self.layerNorm1(x))
+        x = x + self.attn(self.layerNorm1(x), CnnImg)
         x = x + self.fFN(self.layerNorm2(x))
         return x
