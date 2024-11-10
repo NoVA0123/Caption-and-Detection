@@ -21,9 +21,9 @@
     "transformer_config":{
         "block_size": 256,
         "vocab_size": 30080,
-        "number_layers": 6,
-        "number_heads": 6,
-        "d_model": 384
+        "number_layers": 12,
+        "number_heads": 12,
+        "d_model": 128
     },
     "model_config":{
         "batch_size": 16,
