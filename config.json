@@ -23,10 +23,10 @@
         "vocab_size": 30080,
         "number_layers": 12,
         "number_heads": 12,
-        "d_model": 96
+        "d_model": 192
     },
     "model_config":{
-        "batch_size": 16,
+        "batch_size": 64,
         "epochs": 12,
         "learning_rate":{
             "max_lr": 6e-4,
