@@ -397,8 +397,7 @@ def train(rank:int,
                                 op=dist.ReduceOp.AVG)
 
             # Applying norm on gradients to reduce shock of the model
-            if not UseScaler:
-                norm = torch.nn.utils.clip_grad_norm(model.parameters(), 1.0)
+            norm = torch.nn.utils.clip_grad_norm(model.parameters(), 1.0)
             
             # Decay in learning rate
             lr = get_decay_lr(GlobalSteps,
