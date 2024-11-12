@@ -449,7 +449,8 @@ def train(rank:int,
                 with torch.no_grad():
                     cap_text = validation(TestImgPath,
                                           WrappedTokenizer,
-                                          model)
+                                          model,
+                                          MaxLen)
                 with open("validation_output.txt", 'a') as f:
                     f.write(cap_text + "\n")
 

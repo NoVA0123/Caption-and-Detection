@@ -14,7 +14,8 @@ if torch.cuda.is_available():
 
 def validation(ImgPath:str,
                tokenizer,
-               model):
+               model,
+               TokenSize):
 
     Temprature = 0.8
     Topk = 115
@@ -57,7 +58,7 @@ def validation(ImgPath:str,
     img = img.to(device)
     SampleRng = torch.Generator(device=device)
     SampleRng.manual_seed(1337)
-    for _ in range(256):
+    for _ in range(TokenSize):
 
         # forwarding the model
         logits = model(XGen, img)
