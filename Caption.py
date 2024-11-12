@@ -15,7 +15,9 @@ from base_files.cnn_model_files.cnn_model import get_cnn_model
 @torch.no_grad()
 def CaptionGenerator(JsonPath:str,
                      ImgPath: str,
-                     ModelPath: str):
+                     ModelPath: str,
+                     Temprature:float=1.0,
+                     Topk=None):
 
     device = 'cpu'
 
@@ -110,7 +112,11 @@ def CaptionGenerator(JsonPath:str,
         # forwarding the model
         logits = model(XGen, img)
         # Take the logits at last position
-        logits = logits[:, -1, :]
+        logits = logits[:, -1, :] / Temprature
+
+        if Topk is not None:
+            v, _ = torch.topk(logits, min(Topk, logits.size(-1)))
+            logits[logits < v[:, [-1]]] = -float('Inf')
         # Get the probablities
         probs = F.softmax(logits, dim=-1)
         # TopK sampling
