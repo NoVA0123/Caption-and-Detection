@@ -161,10 +161,10 @@ def train(rank:int,
     ModelConfig = data['model_config']
     BatchSize = ModelConfig['batch_size']
     Epochs = ModelConfig['epochs']
-    if bf16:
+    '''if bf16:
         UseFloat16 = False
     else:
-        UseFloat16 = True
+        UseFloat16 = True'''
 
     # Cnn Model parameters
     CnnConf = data['cnn_model_config']
@@ -251,11 +251,11 @@ def train(rank:int,
 
 
     # Adding grad scaler for mixed precision
-    if device_type == 'cuda' and UseFloat16 is not None:
+    '''if device_type == 'cuda' and UseFloat16:
         Scaler = torch.cuda.amp.GradScaler()
         UseScaler = True
     else:
-        UseScaler = False
+        UseScaler = False'''
 
 
     if DistDataParallel:
@@ -341,17 +341,14 @@ def train(rank:int,
                 Autocasting to datatypes of model to bfloat16 as it is 4x
                 faster than normal float32. It reduces the decimal value.
                 '''
-                if device_type == 'cuda' :
-
+                if bf16:
                     with torch.autocast(device_type=device_type,
-                                        dtype=torch.bfloat16 if bf16 else torch.float16):
+                                        dtype=torch.bfloat16):
                         logits = model(DecoderInput, img)
-
                 else:
                     logits = model(DecoderInput, img)
 
-                loss = F.cross_entropy(logits.view(-1,
-                                                   logits.size(-1)),
+                loss = F.cross_entropy(logits.view(-1, logits.size(-1)),
                                        Label.view(-1))
 
                 '''
@@ -384,11 +381,12 @@ def train(rank:int,
                 if DistDataParallel:
                     model.require_backward_grad_sync = (MicroSteps == GradAccumSteps - 1)
 
-                if UseScaler:
+                '''if UseScaler:
                     Scaler.scale(loss).backward()
 
                 else:
-                    loss.backward()
+                    loss.backward()'''
+                loss.backward()
             
 
             # Reduce gradients alltogther
@@ -397,7 +395,7 @@ def train(rank:int,
                                 op=dist.ReduceOp.AVG)
 
             # Applying norm on gradients to reduce shock of the model
-            norm = torch.nn.utils.clip_grad_norm(model.parameters(), 1.0)
+            norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             
             # Decay in learning rate
             lr = get_decay_lr(GlobalSteps,
@@ -409,12 +407,14 @@ def train(rank:int,
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
 
-            if not UseScaler:
+            '''if not UseScaler:
                 optimizer.step() # Applying a backpropogation step
 
             else:
                 Scaler.step(optimizer)
-                Scaler.update()
+                Scaler.update()'''
+            optimizer.step()
+            optimizer.zero_grad(set_to_none=True)
 
             # Synchronizing GPU and CPU runtime
             torch.cuda.synchronize()
@@ -430,11 +430,12 @@ def train(rank:int,
             GlobalSteps += 1
             LocalSteps += 1
 
-            if rank == 0 and not UseScaler:
+            '''if rank == 0 and not UseScaler:
                 print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} |{norm: .2f} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
 
             elif rank == 0:
-                print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} |Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
+                print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} |Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")'''
+            print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} |{norm: .2f} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
 
             writer.add_scalar('Training Loss', LossAccum.item(), global_step=GlobalSteps)
             writer.add_scalar('Training Time Per Step', dt * 1000, global_step=GlobalSteps)
@@ -453,7 +454,7 @@ def train(rank:int,
     writer.close()
     
 
-    if DistDataParallel and rank == 0 and UseScaler:
+    '''if DistDataParallel and rank == 0 and UseScaler:
 
         ModelName = 'caption_model.pt'
         torch.save({
@@ -462,9 +463,9 @@ def train(rank:int,
             'optimizer_state_dict': optimizer.state_dict(),
             'global_step': GlobalSteps,
             'scaler': Scaler.state_dict()
-            }, ModelName)
+            }, ModelName)'''
 
-    elif DistDataParallel and rank == 0:
+    if DistDataParallel and rank == 0:
 
         ModelName = 'caption_model.pt'
         torch.save({
@@ -473,18 +474,6 @@ def train(rank:int,
             'optimizer_state_dict': optimizer.state_dict(),
             'global_step': GlobalSteps
             }, ModelName)
-
-    elif UseScaler:
-
-        ModelName = 'caption_model.pt'
-        torch.save({
-            'epoch': Epochs,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'global_step': GlobalSteps,
-            'scaler': Scaler.state_dict()
-            }, ModelName)
-
     else: 
 
         ModelName = 'caption_model.pt'
@@ -495,6 +484,16 @@ def train(rank:int,
             'global_step': GlobalSteps
             }, ModelName)
 
+    '''elif UseScaler:
+
+        ModelName = 'caption_model.pt'
+        torch.save({
+            'epoch': Epochs,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'global_step': GlobalSteps,
+            'scaler': Scaler.state_dict()
+            }, ModelName)'''
 
     # Destroy all parallel process
     if DistDataParallel:
