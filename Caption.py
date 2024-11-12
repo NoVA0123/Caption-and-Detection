@@ -16,9 +16,11 @@ from base_files.cnn_model_files.cnn_model import get_cnn_model
 def CaptionGenerator(JsonPath:str,
                      ImgPath: str,
                      ModelPath: str,
-                     Temprature:float=1.0,
+                     Temprature=1.0,
                      Topk=None):
 
+    Temprature = float(Temprature)
+    TopK = int(Topk)
     device = 'cpu'
 
     # Use GPU if it is available
