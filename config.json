@@ -20,7 +20,7 @@
     },
     "transformer_config":{
         "block_size": 1024,
-        "vocab_size": 30000,
+        "vocab_size": 30080,
         "number_layers": 12,
         "number_heads": 12,
         "d_model": 768
