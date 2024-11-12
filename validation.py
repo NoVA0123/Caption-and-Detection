@@ -1,4 +1,5 @@
 import torch
+from torch.cuda import temperature
 from torchvision.transforms import v2
 from torchvision.io import read_image
 import torch.nn.functional as F
@@ -44,6 +45,8 @@ def validation(ImgPath:str,
 
     '''Creating caption for Image'''
     model.eval()
+    Temprature = 0.8
+    Topk = 115
     # NumReturnSequences = 4
     CurrentTok = tokenizer.convert_tokens_to_ids('<|start_of_text|>')
     XGen = torch.tensor([CurrentTok], dtype=torch.long)
@@ -59,7 +62,10 @@ def validation(ImgPath:str,
         # forwarding the model
         logits = model(XGen, img)
         # Take the logits at last position
-        logits = logits[:, -1, :]
+        logits = logits[:, -1, :] / Temprature
+        # Topk
+        v, _ = torch.topk(logits, min(Topk, logits.size(-1)))
+        logits[logits < v[:, [-1]]] = -float('Inf')
         # Get the probablities
         probs = F.softmax(logits, dim=-1)
         # TopK sampling
