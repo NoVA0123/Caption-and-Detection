@@ -20,7 +20,6 @@ def CaptionGenerator(JsonPath:str,
                      Topk=None):
 
     Temprature = float(Temprature)
-    TopK = int(Topk)
     device = 'cpu'
 
     # Use GPU if it is available
@@ -116,9 +115,8 @@ def CaptionGenerator(JsonPath:str,
         # Take the logits at last position
         logits = logits[:, -1, :] / Temprature
 
-        print(type(Topk))
-        print(type(logits))
         if Topk is not None:
+            Topk = int(Topk)
             v, _ = torch.topk(logits, min(Topk, logits.size(-1)))
             logits[logits < v[:, [-1]]] = -float('Inf')
         # Get the probablities
