@@ -116,6 +116,8 @@ def CaptionGenerator(JsonPath:str,
         # Take the logits at last position
         logits = logits[:, -1, :] / Temprature
 
+        print(type(Topk))
+        print(type(logits))
         if Topk is not None:
             v, _ = torch.topk(logits, min(Topk, logits.size(-1)))
             logits[logits < v[:, [-1]]] = -float('Inf')
