@@ -146,10 +146,10 @@ def CaptionGenerator(JsonPath:str,
 # Argument parser
 def command_line_argument():
     parser = ArgumentParser()
-    parser.add_argument('--path', dest='Path', action='append')
+    parser.add_argument('--args', dest='Args', action='append')
     return parser.parse_args()
 
 if __name__ == '__main__':
-    Paths = command_line_argument()
-    Paths = Paths.Path
-    decoded = CaptionGenerator(*Paths)
+    Args = command_line_argument()
+    Args = Args.Args
+    decoded = CaptionGenerator(*Args)
