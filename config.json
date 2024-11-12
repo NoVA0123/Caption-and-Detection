@@ -27,7 +27,7 @@
     },
     "model_config":{
         "batch_size": 4,
-        "epochs": 2,
+        "epochs": 5,
         "learning_rate":{
             "max_lr": 6e-4,
             "warmup_steps": 10,
