@@ -435,7 +435,8 @@ def train(rank:int,
 
             elif rank == 0:
                 print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} |Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")'''
-            print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} |{norm: .2f} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
+            if rank == 0:
+                print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} |{norm: .2f} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
 
             writer.add_scalar('Training Loss', LossAccum.item(), global_step=GlobalSteps)
             writer.add_scalar('Training Time Per Step', dt * 1000, global_step=GlobalSteps)

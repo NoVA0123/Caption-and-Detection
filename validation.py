@@ -16,6 +16,8 @@ def validation(ImgPath:str,
                tokenizer,
                model):
 
+    Temprature = 0.8
+    Topk = 115
     device = 'cpu'
 
     # Use GPU if it is available
@@ -45,8 +47,6 @@ def validation(ImgPath:str,
 
     '''Creating caption for Image'''
     model.eval()
-    Temprature = 0.8
-    Topk = 115
     # NumReturnSequences = 4
     CurrentTok = tokenizer.convert_tokens_to_ids('<|start_of_text|>')
     XGen = torch.tensor([CurrentTok], dtype=torch.long)
