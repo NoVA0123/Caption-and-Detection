@@ -161,10 +161,10 @@ def train(rank:int,
     ModelConfig = data['model_config']
     BatchSize = ModelConfig['batch_size']
     Epochs = ModelConfig['epochs']
-    '''if bf16:
+    if bf16:
         UseFloat16 = False
     else:
-        UseFloat16 = True'''
+        UseFloat16 = True
 
     # Cnn Model parameters
     CnnConf = data['cnn_model_config']
