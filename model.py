@@ -121,9 +121,6 @@ def train(rank:int,
         device_type = device
         DistDataParallel = False
 
-    bf16 = is_bf16_supported()
-
-
     # Ignore warnings
     warnings.filterwarnings('ignore')
 
@@ -161,12 +158,15 @@ def train(rank:int,
     ModelConfig = data['model_config']
     BatchSize = ModelConfig['batch_size']
     Epochs = ModelConfig['epochs']
-    if bf16:
-        UseFloat16 = False
-    else:
-        UseFloat16 = True
-    if rank == 0:
-        print(f"Using Float: {'bf16' if bf16 else 'fp16'}")
+    ModelDtype = ModelConfig['dtype']
+
+    bf16 = False
+    fp16 = False
+    
+    if ModelDtype == "bf16":
+        bf16 = True
+    elif ModelDtype == "fp16":
+        fp16 = True
 
     # Cnn Model parameters
     CnnConf = data['cnn_model_config']
@@ -253,7 +253,7 @@ def train(rank:int,
 
 
     # Adding grad scaler for mixed precision
-    if device_type == 'cuda' and UseFloat16:
+    if device_type == 'cuda' and fp16:
         Scaler = torch.cuda.amp.GradScaler()
         UseScaler = True
     else:
@@ -284,6 +284,9 @@ def train(rank:int,
     WarmupSteps = ModelConfig['learning_rate']['warmup_steps']
     MaxSteps = ModelConfig['learning_rate']['max_steps']
     test = ModelConfig['learning_rate']['test']
+
+    if test:
+        Epochs = 1
 
     '''optimizer = torch.optim.AdamW(model.parameters(),
                                   lr=MaxLr,
@@ -370,7 +373,7 @@ def train(rank:int,
                     with torch.autocast(device_type=device_type,
                                         dtype=torch.bfloat16):
                         logits, loss = model(DecoderInput, img, Label)
-                if UseFloat16:
+                if fp16:
                     with torch.autocast(device_type=device_type,
                                         dtype=torch.bfloat16):
                         logits, loss = model(DecoderInput, img, Label)
