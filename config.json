@@ -26,13 +26,13 @@
         "d_model": 768
     },
     "model_config":{
-        "batch_size": 4,
+        "batch_size": 2,
         "epochs": 2,
         "learning_rate":{
             "max_lr": 6e-4,
             "warmup_steps": 10,
             "max_steps": 50,
-            "test": 0
+            "test": 1
         }
     },
     "dataset_config": {
