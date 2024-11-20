@@ -251,11 +251,11 @@ def train(rank:int,
 
 
     # Adding grad scaler for mixed precision
-    '''if device_type == 'cuda' and UseFloat16:
+    if device_type == 'cuda' and UseFloat16:
         Scaler = torch.cuda.amp.GradScaler()
         UseScaler = True
     else:
-        UseScaler = False'''
+        UseScaler = False
 
 
     if DistDataParallel:
@@ -337,29 +337,6 @@ def train(rank:int,
                 Label = caption['label'].to(device)
                 img = img.to(device)
 
-
-                '''
-                Autocasting to datatypes of model to bfloat16 as it is 4x
-                faster than normal float32. It reduces the decimal value.
-                '''
-                if bf16:
-                    with torch.autocast(device_type=device_type,
-                                        dtype=torch.bfloat16):
-                        logits = model(DecoderInput, img)
-                else:
-                    logits = model(DecoderInput, img)
-
-                loss = F.cross_entropy(logits.view(-1, logits.size(-1)),
-                                       Label.view(-1))
-
-                '''
-                To calculate Gradient accumulation for larger batches, we need
-                to add loss for each micro batch size and scaled it down during
-                each step.
-                '''
-                loss = loss / GradAccumSteps
-                LossAccum += loss.detach() # Keeps on adding gradient
-
                 '''
                 Gradient syncing is stopped before last step because it
                 increase training process and synchronize every inner loop will
@@ -382,11 +359,31 @@ def train(rank:int,
                 if DistDataParallel:
                     model.require_backward_grad_sync = (MicroSteps == GradAccumSteps - 1)
 
-                '''if UseScaler:
-                    Scaler.scale(loss).backward()
 
+                '''
+                Autocasting to datatypes of model to bfloat16 as it is 4x
+                faster than normal float32. It reduces the decimal value.
+                '''
+                if bf16:
+                    with torch.autocast(device_type=device_type,
+                                        dtype=torch.bfloat16):
+                        logits, loss = model(DecoderInput, img, Label)
                 else:
-                    loss.backward()'''
+                    logits, loss = model(DecoderInput, img, Label)
+
+
+                '''
+                To calculate Gradient accumulation for larger batches, we need
+                to add loss for each micro batch size and scaled it down during
+                each step.
+                '''
+                loss = loss / GradAccumSteps
+
+
+            if UseScaler:
+                Scaler.scale(loss).backward()
+
+            else:
                 loss.backward()
             
 
@@ -396,7 +393,8 @@ def train(rank:int,
                                 op=dist.ReduceOp.AVG)
 
             # Applying norm on gradients to reduce shock of the model
-            norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            Scaler.unscale_(optimizer)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             
             # Decay in learning rate
             lr = get_decay_lr(GlobalSteps,
@@ -408,13 +406,12 @@ def train(rank:int,
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
 
-            '''if not UseScaler:
+            if not UseScaler:
                 optimizer.step() # Applying a backpropogation step
 
             else:
                 Scaler.step(optimizer)
-                Scaler.update()'''
-            optimizer.step()
+                Scaler.update()
             optimizer.zero_grad(set_to_none=True)
 
             # Synchronizing GPU and CPU runtime
@@ -425,6 +422,7 @@ def train(rank:int,
             dt = t1 - t0 
 
             # Calculating Tokens processed per second
+            Lossf = loss.item() * GradAccumSteps
             TokensProcessed = BatchSize * MaxLen * GradAccumSteps * world_size
             TokensPerSec = TokensProcessed / dt
 
@@ -437,9 +435,9 @@ def train(rank:int,
             elif rank == 0:
                 print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} |Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")'''
             if rank == 0:
-                print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {LossAccum.item(): .2f} | lr: {lr: .5e} |{norm: .2f} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
+                print(f"Epoch: {i} | Steps: {LocalSteps} | loss: {Lossf: .2f} | lr: {lr: .5e} | Process time: {dt*1000:.2f}ms | tok/sec: {TokensPerSec:.2f}")
 
-            writer.add_scalar('Training Loss', LossAccum.item(), global_step=GlobalSteps)
+            writer.add_scalar('Training Loss', Lossf, global_step=GlobalSteps)
             writer.add_scalar('Training Time Per Step', dt * 1000, global_step=GlobalSteps)
             TimeTaken += dt*1000
             writer.add_scalar("Training Time", TimeTaken, global_step=GlobalSteps)
@@ -457,7 +455,7 @@ def train(rank:int,
     writer.close()
     
 
-    '''if DistDataParallel and rank == 0 and UseScaler:
+    if DistDataParallel and rank == 0 and UseScaler:
 
         ModelName = 'caption_model.pt'
         torch.save({
@@ -466,9 +464,20 @@ def train(rank:int,
             'optimizer_state_dict': optimizer.state_dict(),
             'global_step': GlobalSteps,
             'scaler': Scaler.state_dict()
-            }, ModelName)'''
+            }, ModelName)
 
-    if DistDataParallel and rank == 0:
+    elif UseScaler:
+
+        ModelName = 'caption_model.pt'
+        torch.save({
+            'epoch': Epochs,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'global_step': GlobalSteps,
+            'scaler': Scaler.state_dict()
+            }, ModelName)
+
+    elif DistDataParallel and rank == 0:
 
         ModelName = 'caption_model.pt'
         torch.save({
@@ -486,17 +495,6 @@ def train(rank:int,
             'optimizer_state_dict': optimizer.state_dict(),
             'global_step': GlobalSteps
             }, ModelName)
-
-    '''elif UseScaler:
-
-        ModelName = 'caption_model.pt'
-        torch.save({
-            'epoch': Epochs,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'global_step': GlobalSteps,
-            'scaler': Scaler.state_dict()
-            }, ModelName)'''
 
     # Destroy all parallel process
     if DistDataParallel:
