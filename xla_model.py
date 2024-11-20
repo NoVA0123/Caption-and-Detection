@@ -104,8 +104,8 @@ def train(rank:int,
     # Check for multiple GPU's
     new_rank = xr.global_ordinal()
     assert new_rank == rank
-    setup(rank=rank,# Current GPU id
-          world_size=world_size) # Total number of GPU's
+    #setup(rank=rank,# Current GPU id
+          #world_size=world_size) # Total number of GPU's
     device = 'xla'
     DistDataParallel = True
 
