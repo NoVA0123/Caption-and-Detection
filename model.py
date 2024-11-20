@@ -165,6 +165,8 @@ def train(rank:int,
         UseFloat16 = False
     else:
         UseFloat16 = True
+    if rank == 0:
+        print(f"Using Float: {'bf16' if bf16 else 'fp16'}")
 
     # Cnn Model parameters
     CnnConf = data['cnn_model_config']
@@ -386,12 +388,12 @@ def train(rank:int,
 
             if UseScaler:
                 Scaler.scale(loss).backward()
+                Scaler.unscale_(optimizer)
 
             else:
                 loss.backward()
 
             # Applying norm on gradients to reduce shock of the model
-            Scaler.unscale_(optimizer)
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             
             # Decay in learning rate
