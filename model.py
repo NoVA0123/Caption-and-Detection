@@ -368,6 +368,10 @@ def train(rank:int,
                     with torch.autocast(device_type=device_type,
                                         dtype=torch.bfloat16):
                         logits, loss = model(DecoderInput, img, Label)
+                if UseFloat16:
+                    with torch.autocast(device_type=device_type,
+                                        dtype=torch.bfloat16):
+                        logits, loss = model(DecoderInput, img, Label)
                 else:
                     logits, loss = model(DecoderInput, img, Label)
 
@@ -385,12 +389,6 @@ def train(rank:int,
 
             else:
                 loss.backward()
-            
-
-            # Reduce gradients alltogther
-            if DistDataParallel:
-                dist.all_reduce(LossAccum,
-                                op=dist.ReduceOp.AVG)
 
             # Applying norm on gradients to reduce shock of the model
             Scaler.unscale_(optimizer)
