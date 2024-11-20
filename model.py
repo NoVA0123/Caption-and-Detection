@@ -384,8 +384,6 @@ def train(rank:int,
                 i.e. model will not converge(minimum loss) smoothly and will shock
                 the model.
                 '''
-                if DistDataParallel:
-                    model.require_backward_grad_sync = (MicroSteps == GradAccumSteps - 1)
 
             if UseScaler:
                 Scaler.scale(loss).backward()

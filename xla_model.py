@@ -313,9 +313,8 @@ def train(rank:int,
 
                 logits = model(DecoderInput, img)
 
-                loss = F.cross_entropy(logits.view(-1,
-                                                   logits.size(-1)),
-                                       Label.view(-1))
+                loss = F.cross_entropy(logits.view(-1,logits.size(-1)),
+                                       Label.view(-1), ignore_index=-1)
 
                 '''
                 To calculate Gradient accumulation for larger batches, we need
@@ -323,7 +322,6 @@ def train(rank:int,
                 each step.
                 '''
                 loss = loss / GradAccumSteps
-                LossAccum += loss.detach() # Keeps on adding gradient
 
                 '''
                 Gradient syncing is stopped before last step because it
@@ -344,16 +342,12 @@ def train(rank:int,
                 i.e. model will not converge(minimum loss) smoothly and will shock
                 the model.
                 '''
-                loss.backward()
+                if DistDataParallel:
+                    model.require_backward_grad_sync = (MicroSteps == GradAccumSteps - 1)
+            loss.backward()
             
-
-            # Reduce gradients alltogther
-            if DistDataParallel:
-                dist.all_reduce(LossAccum,
-                                op=dist.ReduceOp.AVG)
-
             # Applying norm on gradients to reduce shock of the model
-            norm = torch.nn.utils.clip_grad_norm(model.parameters(), 1.0)
+            torch.nn.utils.clip_grad_norm(model.parameters(), 1.0)
             
             # Decay in learning rate
             lr = get_decay_lr(GlobalSteps,
@@ -366,9 +360,6 @@ def train(rank:int,
                 param_group['lr'] = lr
 
             xm.optimizer.step() # Applying a backpropogation step
-
-            # Synchronizing GPU and CPU runtime
-            torch.cuda.synchronize()
 
             # Storing output time
             t1 = time.time()
