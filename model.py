@@ -343,29 +343,6 @@ def train(rank:int,
                 img = img.to(device)
 
                 '''
-                Gradient syncing is stopped before last step because it
-                increase training process and synchronize every inner loop will
-                waste time. We will not synchronize gradients of ranks until
-                last step, we will just add them up and reduce them alltogther.
-
-
-                Reason why we do Gradient Accumulation:-
-                Reason for doing gradient accumulation is because larger batch 
-                have tendency to smoothen out the convergence while small 
-                batches have tendency to converge faster. Large batches are 
-                good on large dataset but are costlier to train. To fix this
-                gradient accumulation is used on smaller batches to accumulate
-                gradient. If gradients are accumulated we can average the loss
-                and get the same result as that on larger batch. But not doing
-                will not accumulate and will not smooth out the training process,
-                i.e. model will not converge(minimum loss) smoothly and will shock
-                the model.
-                '''
-                if DistDataParallel:
-                    model.require_backward_grad_sync = (MicroSteps == GradAccumSteps - 1)
-
-
-                '''
                 Autocasting to datatypes of model to bfloat16 as it is 4x
                 faster than normal float32. It reduces the decimal value.
                 '''
@@ -388,6 +365,27 @@ def train(rank:int,
                 '''
                 loss = loss / GradAccumSteps
 
+                '''
+                Gradient syncing is stopped before last step because it
+                increase training process and synchronize every inner loop will
+                waste time. We will not synchronize gradients of ranks until
+                last step, we will just add them up and reduce them alltogther.
+
+
+                Reason why we do Gradient Accumulation:-
+                Reason for doing gradient accumulation is because larger batch 
+                have tendency to smoothen out the convergence while small 
+                batches have tendency to converge faster. Large batches are 
+                good on large dataset but are costlier to train. To fix this
+                gradient accumulation is used on smaller batches to accumulate
+                gradient. If gradients are accumulated we can average the loss
+                and get the same result as that on larger batch. But not doing
+                will not accumulate and will not smooth out the training process,
+                i.e. model will not converge(minimum loss) smoothly and will shock
+                the model.
+                '''
+                if DistDataParallel:
+                    model.require_backward_grad_sync = (MicroSteps == GradAccumSteps - 1)
 
             if UseScaler:
                 Scaler.scale(loss).backward()
