@@ -327,11 +327,8 @@ def train(rank:int,
 
             optimizer.zero_grad(set_to_none=True) # Setting optimizer to zero for every step
 
-            # Initializing loss accumalation(details are present in loss calculating code)
-            LossAccum = 0.
-
             # Accumulated gradient calculation
-            for MicroSteps in range(GradAccumSteps):
+            for _ in range(GradAccumSteps):
 
                 # Iterating the dataset
                 caption = next(IterCapData)
@@ -349,13 +346,13 @@ def train(rank:int,
                 if bf16:
                     with torch.autocast(device_type=device_type,
                                         dtype=torch.bfloat16):
-                        logits, loss = model(DecoderInput, img, Label)
+                        _ , loss = model(DecoderInput, img, Label)
                 if fp16:
                     with torch.autocast(device_type=device_type,
                                         dtype=torch.bfloat16):
-                        logits, loss = model(DecoderInput, img, Label)
+                        _ , loss = model(DecoderInput, img, Label)
                 else:
-                    logits, loss = model(DecoderInput, img, Label)
+                    _ , loss = model(DecoderInput, img, Label)
 
 
                 '''
@@ -391,6 +388,9 @@ def train(rank:int,
 
             else:
                 loss.backward()
+
+            if DistDataParallel:
+                dist.all_reduce(loss, op=dist.ReduceOp.AVG)
 
             # Applying norm on gradients to reduce shock of the model
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
