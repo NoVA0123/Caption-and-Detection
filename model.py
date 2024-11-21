@@ -392,9 +392,6 @@ def train(rank:int,
             else:
                 loss.backward()
 
-            if DistDataParallel:
-                dist.all_reduce(loss, op=dist.ReduceOp.AVG)
-
             # Applying norm on gradients to reduce shock of the model
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             
