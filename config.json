@@ -26,7 +26,7 @@
         "d_model": 384
     },
     "model_config":{
-        "batch_size": 2,
+        "batch_size": 64,
         "epochs": 2,
         "dtype": "fp16",
         "learning_rate":{
