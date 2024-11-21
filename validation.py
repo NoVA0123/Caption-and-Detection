@@ -17,8 +17,8 @@ def validation(ImgPath:str,
                model,
                TokenSize):
 
-    Temprature = 0.8
-    Topk = 115
+    Temprature = 0.64
+    Topk = 100
     device = 'cpu'
 
     # Use GPU if it is available
