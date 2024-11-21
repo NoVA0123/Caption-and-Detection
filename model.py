@@ -325,8 +325,6 @@ def train(rank:int,
         for _ in range(TrainRange):
             t0 = time.time() # Storing time of begining of the step
 
-            optimizer.zero_grad(set_to_none=True) # Setting optimizer to zero for every step
-
             # Accumulated gradient calculation
             for MicroStep in range(GradAccumSteps):
 
