@@ -328,7 +328,7 @@ def train(rank:int,
             optimizer.zero_grad(set_to_none=True) # Setting optimizer to zero for every step
 
             # Accumulated gradient calculation
-            for _ in range(GradAccumSteps):
+            for MicroStep in range(GradAccumSteps):
 
                 # Iterating the dataset
                 caption = next(IterCapData)
@@ -381,6 +381,9 @@ def train(rank:int,
                 i.e. model will not converge(minimum loss) smoothly and will shock
                 the model.
                 '''
+
+                if DistDataParallel:
+                    model.require_backward_grad_sync = (MicroStep == GradAccumSteps - 1)
 
             if UseScaler:
                 Scaler.scale(loss).backward()
