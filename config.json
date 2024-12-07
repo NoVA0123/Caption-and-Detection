@@ -19,6 +19,7 @@
         "tokenizer_load_path": "/kaggle/working/Caption-and-Detection/tokenizer.json"
     },
     "transformer_config":{
+        "model_name": "llama-2",
         "block_size": 128,
         "vocab_size": 30080,
         "number_layers": 3,

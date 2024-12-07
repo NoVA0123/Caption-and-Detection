@@ -23,6 +23,8 @@ from base_files.tokenizer_files.tokenizer import get_tokenizer, texttoid, fast_t
 from base_files.dataset_files.json_extracter import caption_extracter
 from base_files.dataset_files.image_extracter import imgextracter
 from validation import validation
+from llama_architecture import mArgs, precompute_theta_pos_frequencies
+from llama_architecture import transformer as llama_transformer
 
 
 def is_bf16_supported():
@@ -145,6 +147,7 @@ def train(rank:int,
 
     # Initializing transformer config 
     TrConf = data['transformer_config']
+    TrainModelName = TrConf['model_name']
     MaxLen = TrConf['block_size']
     VocabSize = TrConf['vocab_size']
     NumLayers = TrConf['number_layers']
@@ -193,21 +196,27 @@ def train(rank:int,
 
 
     # Creating config
-    config = transformerconfig(blockSize=MaxLen,
-                               vocabSize=VocabSize,
-                               nLayers=NumLayers,
-                               nHead=NumHeads,
-                               nEmbd=DModel)
+    if TrainModelName == 'gpt-2':
+        config = transformerconfig(blockSize=MaxLen,
+                                   vocabSize=VocabSize,
+                                   nLayers=NumLayers,
+                                   nHead=NumHeads,
+                                   nEmbd=DModel)
+    elif TrainModelName == 'llama-2':
+        config = mArgs(dim=DModel,
+                       nLayers=NumLayers,
+                       nHeads=NumHeads,
+                       MaxSeqLen=MaxLen,
+                       VocabSize=VocabSize)
     
 
     # Downloading the Cnn model
     if ExistingPath is not None and SpecificDownloadPath is not None:
-        efficient5 = get_cnn_model(DModel=DModel,
-                                  ExistingPath=ExistingPath,
-                                  SpecificDownloadPath=SpecificDownloadPath)
+        efficientb0 = get_cnn_model(ExistingPath=ExistingPath,
+                                    SpecificDownloadPath=SpecificDownloadPath)
 
     else:
-        efficient5 = get_cnn_model(DModel=DModel)
+        efficientb0 = get_cnn_model()
 
 
     # Loading caption data into dataloader
@@ -244,8 +253,16 @@ def train(rank:int,
     # Initializing the transformer model
     if bf16:
         torch.set_float32_matmul_precision('high')
-    model = transformer(config=config,
-                        CnnModel=efficient5)
+    if TrainModelName == 'gpt-2':
+        model = transformer(config=config,
+                            CnnModel=efficientb0)
+    elif TrainModelName == 'llama-2':
+        FreqComplex = precompute_theta_pos_frequencies(config.dim // config.nHeads,
+                                                       config.MaxSeqLen,
+                                                       device=device)
+        model = llama_transformer(config,
+                                  FreqComplex=FreqComplex,
+                                  efficientb0)
     model.to(device) 
 
     # To compile model and make model faster
@@ -345,7 +362,7 @@ def train(rank:int,
                         _ , loss = model(DecoderInput, img, Label)
                 if fp16:
                     with torch.autocast(device_type=device_type,
-                                        dtype=torch.bfloat16):
+                                        dtype=torch.float16):
                         _ , loss = model(DecoderInput, img, Label)
                 else:
                     _ , loss = model(DecoderInput, img, Label)
