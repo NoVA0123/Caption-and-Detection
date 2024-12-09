@@ -300,7 +300,7 @@ def train(rank:int,
     MinLr = MaxLr * 0.1
     WarmupSteps = ModelConfig['learning_rate']['warmup_steps']
     MaxSteps = ModelConfig['learning_rate']['max_steps']
-    test = ModelConfig['test']
+    test = ModelConfig['learning_rate']['test']
 
     if test:
         Epochs = 1
