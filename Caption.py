@@ -24,6 +24,7 @@ def CaptionGenerator(ModelName:str,
                      Topk=None):
 
     TokenSize = int(TokenSize)
+    Topk = int(Topk) if Topk is not None else None
     Temprature = float(Temprature)
     device = 'cpu'
 
