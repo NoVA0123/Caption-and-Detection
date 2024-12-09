@@ -89,15 +89,20 @@ def CaptionGenerator(ModelName:str,
     ExistingPath = CnnConf['existing_path']
     SpecificDownloadPath = CnnConf['specific_download_path']
     if ExistingPath is not None and SpecificDownloadPath is not None:
-        effnetv2s = get_cnn_model(ExistingPath=ExistingPath,
+        effnetb0 = get_cnn_model(ExistingPath=ExistingPath,
                                   SpecificDownloadPath=SpecificDownloadPath)
     else:
-        effnetv2s = get_cnn_model()
+        effnetb0 = get_cnn_model()
 
 
     # Initializing the transformer model
-    model = transformer(config=config,
-                        CnnModel=effnetv2s)
+    if ModelName == 'llama-2':
+        model = llama_transformer(config=config,
+                                  CnnModel=effnetb0)
+    else:
+        model = transformer(config=config,
+                            CnnModel=effnetb0)
+
     # Loading checkpoint
     checkpoint = torch.load(ModelPath)
     state_dict = checkpoint['model_state_dict']
