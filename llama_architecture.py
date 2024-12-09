@@ -89,7 +89,7 @@ class selfattention(nn.Module):
         self.nRep = self.nHeadsQ // self.nKVHeads
         self.headDim = args.dim // args.nHeads 
 
-        self.imgLayer = nn.Linear(args.dim, args.nHeads, bias=False)
+        self.imgLayer = nn.Linear(args.dim, args.nHeads * self.headDim, bias=False)
         self.wQ = nn.Linear(args.dim, args.nHeads * self.headDim, bias=False)
         self.wK = nn.Linear(args.dim, self.nKVHeads * self.headDim, bias=False)
         self.wV = nn.Linear(args.dim, self.nKVHeads * self.headDim, bias=False)
