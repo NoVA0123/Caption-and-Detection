@@ -30,6 +30,7 @@
         "batch_size": 64,
         "epochs": 3,
         "dtype": "fp16",
+        "test": 1,
         "learning_rate":{
             "max_lr": 6e-4,
             "warmup_steps": 10,

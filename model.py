@@ -98,7 +98,6 @@ def parallel_data_sampler(rank,
 def train(rank:int,
           world_size:int,
           JsonPath:str,
-          test:int
           ):
     
     # Check for multiple GPU's
@@ -301,6 +300,7 @@ def train(rank:int,
     MinLr = MaxLr * 0.1
     WarmupSteps = ModelConfig['learning_rate']['warmup_steps']
     MaxSteps = ModelConfig['learning_rate']['max_steps']
+    test = ModelConfig['test']
 
     if test:
         Epochs = 1
@@ -518,7 +518,6 @@ def train(rank:int,
 def command_line_argument():
     parser = ArgumentParser()
     parser.add_argument('--path', dest='Path')
-    parser.add_argument('--test', dest='Test')
     return parser.parse_args()
 
 
@@ -530,7 +529,7 @@ if __name__ == "__main__":
 
     if world_size > 1 and torch.cuda.is_available():
         mp.spawn(train,
-                 args=(world_size, JsonPath.Path, JsonPath.Test),
+                 args=(world_size, JsonPath.Path),
                  nprocs=world_size)
 
     else:
@@ -539,5 +538,4 @@ if __name__ == "__main__":
 
         train(rank,
               world_size,
-              JsonPath.Path,
-              JsonPath.Test)
+              JsonPath.Path)

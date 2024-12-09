@@ -258,7 +258,7 @@ class transformer(nn.Module):
         if inference:
             FreqComplex = self.freqsComplex[StartPos:StartPos + SeqLen]
         else:
-            FreqComplex = self.freqsComplex
+            FreqComplex = self.freqsComplex[:, :SeqLen]
 
         # Feeding data to layers
         for layer in self.layers:
