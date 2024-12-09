@@ -191,7 +191,6 @@ class decoderblock(nn.Module):
         super(decoderblock, self).__init__()
         self.nHeads = args.nHeads
         self.dim = args.dim
-        self.hDim = args.dim // args.nHeads
 
         self.attention = selfattention(args)
         self.feedForward = feedforward(args)
@@ -258,7 +257,7 @@ class transformer(nn.Module):
         if inference:
             FreqComplex = self.freqsComplex[StartPos:StartPos + SeqLen]
         else:
-            FreqComplex = self.freqsComplex[:, :SeqLen]
+            FreqComplex = self.freqsComplex
 
         # Feeding data to layers
         for layer in self.layers:
