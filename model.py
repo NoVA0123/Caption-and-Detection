@@ -257,12 +257,9 @@ def train(rank:int,
         model = transformer(config=config,
                             CnnModel=efficientb0)
     elif TrainModelName == 'llama-2':
-        FreqComplex = precompute_theta_pos_frequencies(config.dim // config.nHeads,
-                                                       config.MaxSeqLen,
-                                                       device=device)
         model = llama_transformer(config,
-                                  FreqComplex=FreqComplex,
-                                  CnnModel=efficientb0)
+                                  CnnModel=efficientb0,
+                                  device=device)
     model.to(device) 
 
     # To compile model and make model faster

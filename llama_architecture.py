@@ -213,8 +213,8 @@ class decoderblock(nn.Module):
 class transformer(nn.Module):
     def __init__(self,
                  args: mArgs,
-                 FreqComplex: torch.Tensor,
-                 CnnModel) -> None:
+                 CnnModel,
+                 device) -> None:
         super(transformer, self).__init__()
         assert args.VocabSize != -1, "Vocab size is not set"
         
@@ -228,7 +228,10 @@ class transformer(nn.Module):
         self.norm = rmsnorm(args.dim, eps=args.NormEps)
         self.output = nn.Linear(args.dim, self.vocabSize, bias=False)
 
-        self.freqsComplex = FreqComplex
+        self.freqsComplex = precompute_theta_pos_frequencies(args.dim // args.nHeads,
+                                                             args.MaxSeqLen,
+                                                             device=device)
+
 
         self.convertLayer = nn.Linear(1000, args.dim, bias=False)
         self.tokEmbedding.weight = self.output.weight
