@@ -188,7 +188,7 @@ class feedforward(nn.Module):
 class decoderblock(nn.Module):
     def __init__(self,
                 args: mArgs):
-        super(encoderblock, self).__init__()
+        super(decoderblock, self).__init__()
         self.nHeads = args.nHeads
         self.dim = args.dim
         self.hDim = args.dim // args.nHeads
