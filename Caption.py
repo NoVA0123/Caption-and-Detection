@@ -13,7 +13,8 @@ from base_files.cnn_model_files.cnn_model import get_cnn_model
 
 
 @torch.no_grad()
-def CaptionGenerator(JsonPath:str,
+def CaptionGenerator(ModelName:str,
+                     JsonPath:str,
                      ImgPath: str,
                      ModelPath: str,
                      Temprature=1.0,
@@ -108,26 +109,36 @@ def CaptionGenerator(JsonPath:str,
     img = img.to(device)
     SampleRng = torch.Generator(device=device)
     SampleRng.manual_seed(1337)
-    for _ in range(MaxLen):
+    if ModelName == 'llama-2':
+        values = XGen
+    for x in range(TokenSize):
 
         # forwarding the model
-        logits = model(XGen, img)
+        if ModelName == 'llama-2':
+            logits = model(XGen, img, StartPos=x)
+        else:
+            logits = model(XGen, img)
         # Take the logits at last position
         logits = logits[:, -1, :] / Temprature
-
-        if Topk is not None:
-            Topk = int(Topk)
-            v, _ = torch.topk(logits, min(Topk, logits.size(-1)))
-            logits[logits < v[:, [-1]]] = -float('Inf')
+        # Topk
+        v, _ = torch.topk(logits, min(Topk, logits.size(-1)))
+        logits[logits < v[:, [-1]]] = -float('Inf')
         # Get the probablities
         probs = F.softmax(logits, dim=-1)
         # TopK sampling
         ix = torch.multinomial(probs, num_samples=1, generator=SampleRng) # (B, 1)
 
         # gather the corresponding indices
-        XGen = torch.cat((XGen, ix), dim=1)
+        if ModelName == 'llama-2':
+            XGen = ix
+            values = torch.cat((values, ix), dim=1)
+        else:
+            XGen = torch.cat((XGen, ix), dim=1)
+
         if ix[0] == 1:
             break
+    if ModelName == 'llama-2':
+        XGen = values
 
     # Print the text which has been generated
     '''DecodedValues = []
