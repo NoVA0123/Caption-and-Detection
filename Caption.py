@@ -19,10 +19,11 @@ def CaptionGenerator(ModelName:str,
                      JsonPath:str,
                      ImgPath: str,
                      ModelPath: str,
-                     TokenSize:int,
+                     TokenSize: str,
                      Temprature=1.0,
                      Topk=None):
 
+    TokenSize = int(TokenSize)
     Temprature = float(Temprature)
     device = 'cpu'
 
