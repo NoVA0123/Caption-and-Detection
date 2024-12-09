@@ -262,7 +262,7 @@ def train(rank:int,
                                                        device=device)
         model = llama_transformer(config,
                                   FreqComplex=FreqComplex,
-                                  efficientb0)
+                                  CnnModel=efficientb0)
     model.to(device) 
 
     # To compile model and make model faster
