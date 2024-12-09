@@ -33,7 +33,7 @@
         "learning_rate":{
             "max_lr": 6e-4,
             "warmup_steps": 10,
-            "max_steps": 500,
+            "max_steps": 500
         }
     },
     "dataset_config": {
