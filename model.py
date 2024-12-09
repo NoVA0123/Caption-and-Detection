@@ -457,7 +457,8 @@ def train(rank:int,
 
             if rank == 0:
                 with torch.no_grad():
-                    cap_text = validation(TestImgPath,
+                    cap_text = validation(TrainModelName,
+                                          TestImgPath,
                                           WrappedTokenizer,
                                           model,
                                           MaxLen)

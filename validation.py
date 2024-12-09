@@ -12,7 +12,8 @@ if torch.cuda.is_available():
     torch.cuda.manual_seed(1337)
 
 
-def validation(ImgPath:str,
+def validation(ModelName:str,
+               ImgPath:str,
                tokenizer,
                model,
                TokenSize):
@@ -58,10 +59,15 @@ def validation(ImgPath:str,
     img = img.to(device)
     SampleRng = torch.Generator(device=device)
     SampleRng.manual_seed(1337)
-    for _ in range(TokenSize):
+    if ModelName == 'llama-2':
+        values = XGen
+    for x in range(TokenSize):
 
         # forwarding the model
-        logits = model(XGen, img)
+        if ModelName == 'llama-2':
+            logits = model(XGen, img, StartPos=x)
+        else:
+            logits = model(XGen, img)
         # Take the logits at last position
         logits = logits[:, -1, :] / Temprature
         # Topk
@@ -73,10 +79,16 @@ def validation(ImgPath:str,
         ix = torch.multinomial(probs, num_samples=1, generator=SampleRng) # (B, 1)
 
         # gather the corresponding indices
-        XGen = torch.cat((XGen, ix), dim=1)
+        if ModelName == 'llama-2':
+            XGen = ix
+            values = torch.cat((values, ix), dim=1)
+        else:
+            XGen = torch.cat((XGen, ix), dim=1)
+
         if ix[0] == 1:
             break
-
+    if ModelName == 'llama-2':
+        XGen = values
     Decoded = tokenizer.decode(XGen[0], skip_special_tokens=True)
     print(f"Caption: {Decoded}\n")
     return Decoded
