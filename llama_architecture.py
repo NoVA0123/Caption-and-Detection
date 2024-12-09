@@ -191,6 +191,7 @@ class decoderblock(nn.Module):
         super(decoderblock, self).__init__()
         self.nHeads = args.nHeads
         self.dim = args.dim
+        self.hDim = args.dim // args.nHeads
 
         self.attention = selfattention(args)
         self.feedForward = feedforward(args)
