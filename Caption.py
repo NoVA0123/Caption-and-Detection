@@ -17,6 +17,7 @@ def CaptionGenerator(ModelName:str,
                      JsonPath:str,
                      ImgPath: str,
                      ModelPath: str,
+                     TokenSize:int,
                      Temprature=1.0,
                      Topk=None):
 
@@ -78,11 +79,10 @@ def CaptionGenerator(ModelName:str,
     ExistingPath = CnnConf['existing_path']
     SpecificDownloadPath = CnnConf['specific_download_path']
     if ExistingPath is not None and SpecificDownloadPath is not None:
-        effnetv2s = get_cnn_model(DModel=DModel,
-                                  ExistingPath=ExistingPath,
+        effnetv2s = get_cnn_model(ExistingPath=ExistingPath,
                                   SpecificDownloadPath=SpecificDownloadPath)
     else:
-        effnetv2s = get_cnn_model(DModel=DModel)
+        effnetv2s = get_cnn_model()
 
 
     # Initializing the transformer model
