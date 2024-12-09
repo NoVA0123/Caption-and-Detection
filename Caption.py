@@ -9,6 +9,8 @@ from torchvision.transforms import v2
 from torchvision.io import read_image
 from base_files.transformer_files.dataclass import transformerconfig
 from base_files.transformer_files.transformer import transformer
+from llama_architecture import transformer as llama_transformer
+from llama_architecture import mArgs
 from base_files.cnn_model_files.cnn_model import get_cnn_model
 
 
@@ -68,11 +70,19 @@ def CaptionGenerator(ModelName:str,
     NumHeads = TrConf['number_heads']
     DModel = TrConf['d_model']
 
-    config = transformerconfig(blockSize=MaxLen,
-                               vocabSize=VocabSize,
-                               nLayers=NumLayers,
-                               nHead=NumHeads,
-                               nEmbd=DModel)
+    if ModelName == 'gpt-2':
+        config = transformerconfig(blockSize=MaxLen,
+                                   vocabSize=VocabSize,
+                                   nLayers=NumLayers,
+                                   nHead=NumHeads,
+                                   nEmbd=DModel)
+    elif ModelName == 'llama-2':
+        config = mArgs(dim=DModel,
+                       nLayers=NumLayers,
+                       nHeads=NumHeads,
+                       MaxSeqLen=MaxLen,
+                       VocabSize=VocabSize)
+
 
     # Downloading the Cnn model
     CnnConf = data['cnn_model_config']
