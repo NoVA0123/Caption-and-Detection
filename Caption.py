@@ -98,7 +98,8 @@ def CaptionGenerator(ModelName:str,
     # Initializing the transformer model
     if ModelName == 'llama-2':
         model = llama_transformer(config,
-                                  CnnModel=effnetb0)
+                                  CnnModel=effnetb0,
+                                  device=device)
     else:
         model = transformer(config=config,
                             CnnModel=effnetb0)
