@@ -266,7 +266,7 @@ def train(rank:int,
     model.to(device) 
 
     # To compile model and make model faster
-    if model == 'gpt-2':
+    if model == 'gpt-2' or DModel == 384:
         model = torch.compile(model)
 
 
