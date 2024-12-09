@@ -262,7 +262,7 @@ class transformer(nn.Module):
 
         # Feeding data to layers
         for layer in self.layers:
-            x = layer(x, StartPos, FreqComplex, ImageFeat, inference)
+            x = layer(x, StartPos, FreqComplex, ImgFeat, inference)
         x = self.norm(x)
         logits = self.output(x).float()
         # Classifying
