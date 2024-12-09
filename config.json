@@ -34,7 +34,7 @@
             "max_lr": 6e-4,
             "warmup_steps": 10,
             "max_steps": 500,
-            "test": 1
+            "test": 0
         }
     },
     "dataset_config": {
