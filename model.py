@@ -266,7 +266,7 @@ def train(rank:int,
     model.to(device) 
 
     # To compile model and make model faster
-    #model = torch.compile(model)
+    model = torch.compile(model)
 
 
     # Adding grad scaler for mixed precision
