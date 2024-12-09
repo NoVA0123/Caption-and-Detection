@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from dataclasses import dataclass
 from typing import Optional
-import math
+import inspect
 
 
 @dataclass
