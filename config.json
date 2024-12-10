@@ -23,8 +23,8 @@
         "block_size": 128,
         "vocab_size": 30080,
         "number_layers": 3,
-        "number_heads": 12,
-        "d_model": 384
+        "number_heads": 32,
+        "d_model": 512
     },
     "model_config":{
         "batch_size": 64,
