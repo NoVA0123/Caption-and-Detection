@@ -31,7 +31,7 @@
         "epochs": 8,
         "dtype": "fp16",
         "learning_rate":{
-            "max_lr": 6e-4,
+            "max_lr": 3e-4,
             "warmup_steps": 10,
             "max_steps": 500,
             "test": 0
