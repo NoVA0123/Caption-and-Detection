@@ -23,12 +23,12 @@
         "block_size": 128,
         "vocab_size": 30080,
         "number_layers": 3,
-        "number_heads": 11,
+        "number_heads": 12,
         "d_model": 384 
     },
     "model_config":{
         "batch_size": 64,
-        "epochs": 13,
+        "epochs": 11,
         "dtype": "fp16",
         "learning_rate":{
             "max_lr": 6e-4,
