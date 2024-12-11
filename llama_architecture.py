@@ -113,7 +113,7 @@ class selfattention(nn.Module):
         BatchSize, SeqLen, _ = x.shape
         device = x.get_device()
         Xq = self.wQ(img)
-	Xq = Xq.repeat(1, SeqLen, 1)
+        Xq = Xq.repeat(1, SeqLen, 1)
         Xk = self.wK(x)
         Xv = self.wV(x)
 
