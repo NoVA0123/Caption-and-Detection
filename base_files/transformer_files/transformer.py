@@ -32,6 +32,7 @@ class transformer(nn.Module):
 
         # Cnn Model
         self.cnnModel = CnnModel
+        self.cnnLayer = nn.Linear(1000, config.nEmbd)
 
         # Pointing final Linear projection weights to token embedding weights
         self.transformer.tokEmbd.weight = self.head.weight
@@ -102,6 +103,7 @@ class transformer(nn.Module):
         # Applying embeddings and tokenization
         # Passing image through Cnn Model
         Img = self.cnnModel(Img)
+        Img = self.cnnLayer(Img)
         Img = torch.reshape(Img,
                             (BatchSize, 1, self.config.nEmbd)) 
 

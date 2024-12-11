@@ -89,7 +89,6 @@ class selfattention(nn.Module):
         self.nRep = self.nHeadsQ // self.nKVHeads
         self.headDim = args.dim // args.nHeads 
 
-        self.imgLayer = nn.Linear(args.dim, args.nHeads * self.headDim, bias=False)
         self.wQ = nn.Linear(args.dim, args.nHeads * self.headDim, bias=False)
         self.wK = nn.Linear(args.dim, self.nKVHeads * self.headDim, bias=False)
         self.wV = nn.Linear(args.dim, self.nKVHeads * self.headDim, bias=False)
@@ -113,12 +112,11 @@ class selfattention(nn.Module):
                 StartPos: int = None):
         BatchSize, SeqLen, _ = x.shape
         device = x.get_device()
-        img = self.imgLayer(img)
-        Xq = self.wQ(x)
+        Xq = self.wQ(img)
+	Xq = Xq.repeat(1, SeqLen, 1)
         Xk = self.wK(x)
         Xv = self.wV(x)
 
-        Xq = Xq + img
         Xq = Xq.view(BatchSize, SeqLen, self.nHeadsQ, self.headDim)
         Xk = Xk.view(BatchSize, SeqLen, self.nKVHeads, self.headDim)
         values = Xv.view(BatchSize, SeqLen, self.nKVHeads, self.headDim)

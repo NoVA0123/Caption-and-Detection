@@ -13,6 +13,8 @@ class cmha(nn.Module):
                                   #3 * config.nEmbd)
         self.qkLayer = nn.Linear(config.nEmbd,
                                   2 * config.nEmbd)
+        self.vLayer = nn.Linear(config.nEmbd,
+                                  config.nEmbd)
         # Output projection
         self.proj = nn.Linear(config.nEmbd,
                               config.nEmbd)
@@ -29,11 +31,11 @@ class cmha(nn.Module):
     def forward(self, x, CnnImg):
         BatchSize, SeqLen, DModel = x.size()
         # Creating query, key and value matrix
-        qk = self.qkLayer(x)
+        qk = self.qkLayer(CnnImg)
         #qkv = self.qkvLayer(x)
-        v = CnnImg.repeat(1, SeqLen, 1)
-
+        v = self.vLayer(x)
         # Splitting the projected matrix
+        qk = qk.repeat(1, SeqLen, 1)
         q, k = qk.split(self.nEmbd, dim=2)
 
         # Changing the dimensions of the matrix for multi head attention

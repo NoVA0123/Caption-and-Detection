@@ -19,19 +19,19 @@
         "tokenizer_load_path": "/kaggle/working/Caption-and-Detection/tokenizer.json"
     },
     "transformer_config":{
-        "model_name": "llama-2",
+        "model_name": "gpt-2",
         "block_size": 128,
         "vocab_size": 30080,
         "number_layers": 3,
-        "number_heads": 32,
-        "d_model": 512
+        "number_heads": 12,
+        "d_model": 384 
     },
     "model_config":{
         "batch_size": 64,
         "epochs": 8,
         "dtype": "fp16",
         "learning_rate":{
-            "max_lr": 3e-4,
+            "max_lr": 6e-4,
             "warmup_steps": 10,
             "max_steps": 500,
             "test": 0
