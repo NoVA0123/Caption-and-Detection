@@ -453,7 +453,7 @@ def train(rank:int,
             writer.add_scalar("Training Time", TimeTaken, global_step=GlobalSteps)
 
 
-            if rank == 0:
+            if rank == 0 and (GlobalSteps % 500 == 0 or GlobalSteps == 1):
                 with torch.no_grad():
                     cap_text = validation(TrainModelName,
                                           TestImgPath,
