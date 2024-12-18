@@ -28,7 +28,7 @@
     },
     "model_config":{
         "batch_size": 64,
-        "epochs": 11,
+        "epochs": 16,
         "dtype": "fp16",
         "learning_rate":{
             "max_lr": 6e-4,
