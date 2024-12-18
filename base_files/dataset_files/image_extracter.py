@@ -15,6 +15,7 @@ class imgextracter(torch.utils.data.Dataset):
             v2.Resize(size=[256,224], antialias=True),
             v2.ToDtype(torch.float, scale=True),
             v2.RandomRotation(degrees=(0,180)),
+            v2.CenterCrop(224),
             v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
             ])
         self.transform = self.transform.to(device)
