@@ -16,7 +16,7 @@ pip install -r requirements.txt
 
 
 
-Note: This is not a proper working model because it is trained on 128 steps rather than 20k - 90k steps. "validation_output.txt" have results of training. Each line displays an output for each step.
+Note: This is not a proper working model because it is trained on 11264 steps rather than 20k - 90k steps. "validation_output.txt" have results of training. Each line displays an output for each step.
 
 
 # Model Description
@@ -28,12 +28,12 @@ This Model uses pretrained EfficientNet5 for feature extraction and GPT-2 archit
 
 Model Specification:
 
-- Sequence Length = 1024
-- Token Dimension(dmodel) = 768
-- Image size (after transformation) = 489 x 456
-- Number of Decoder Layers = 12
+- Sequence Length = 128
+- Token Dimension(dmodel) = 384
+- Image size (after transformation) = 240 x 224
+- Number of Decoder Layers = 3
 - Num of Decoder Heads = 12
-- Batch Size = 4
+- Batch Size = 64
 - Optimzer = AdamW
 
 
